@@ -15,9 +15,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- CONFIGURATION DE L'IDENTITÉ ---
+# --- CONFIGURATION DE L'IDENTITÉ ET DE TON AVATAR LOCAL ---
 USER_NAME = "Charles Joseph"
 AI_DISPLAY_NAME = "Charles IA"
+
+# Utilisation directe du fichier avatar.jpg présent dans ton dépôt GitHub
+URL_AVATAR_AI = "avatar.jpg"
+URL_AVATAR_USER = "avatar.jpg"
 
 # --- FONCTION DE VÉRIFICATION DE LA CONNEXION ---
 def verifier_connexion():
@@ -27,7 +31,7 @@ def verifier_connexion():
     except Exception:
         return False
 
-# --- STYLE CSS AVANCÉ (MICRO DANS LA BARRE) ---
+# --- STYLE CSS APPLI MOBILE (LOOK CHATGPT EXCLUSIF) ---
 st.markdown(f"""
     <style>
     html, body, [data-testid="stAppViewContainer"] {{
@@ -42,7 +46,7 @@ st.markdown(f"""
     }}
     
     .block-container {{
-        padding-top: 1rem !important;
+        padding-top: 2rem !important;
         padding-bottom: 7rem !important;
         max_width: 500px !important;
     }}
@@ -51,7 +55,12 @@ st.markdown(f"""
         background-color: transparent !important;
         padding: 0.8rem 0.5rem !important;
         border-bottom: 1px solid #2d2d2d;
-        display: block !important;
+    }}
+    
+    /* Rendre l'image parfaitement ronde et fluide */
+    [data-testid="stChatMessageAvatar"] {{
+        background-color: transparent !important;
+        border-radius: 50% !important;
     }}
     
     .message-author {{
@@ -68,13 +77,13 @@ st.markdown(f"""
         margin-top: 0px;
     }}
     
-    /* --- STYLE DE LA BARRE CHATINPUT --- */
+    /* --- CONFIGURATION DE LA BARRE DE SAISIE --- */
     [data-testid="stChatInput"] {{
         background-color: #2f2f2f !important;
         border-radius: 26px !important;
         border: 1px solid #424242 !important;
         padding: 8px !important;
-        padding-right: 90px !important; /* Laisse de la place pour le bouton d'envoi ET le micro */
+        padding-right: 90px !important;
     }}
     [data-testid="stChatInput"] input {{
         color: #ffffff !important;
@@ -85,12 +94,12 @@ st.markdown(f"""
         border-radius: 50% !important;
     }}
 
-    /* Style du conteneur flottant pour le micro */
+    /* Micro ancré discrètement à l'intérieur */
     .floating-mic-container {{
         position: fixed;
-        bottom: 32px; /* Aligné avec la hauteur standard du chat_input sur mobile */
+        bottom: 32px;
         left: 50%;
-        transform: translateX(150px); /* Pousse le bouton vers la droite à l'intérieur de la zone */
+        transform: translateX(145px);
         z-index: 999999;
     }}
     </style>
@@ -100,7 +109,7 @@ st.markdown(f"""
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- VARIATION DES TEXTES D'INVITE ---
+# --- TEXTES D'INVITE ALÉATOIRES ---
 phrases_accueil = [
     f"Message {AI_DISPLAY_NAME}...",
     "Comment puis-je t'aider aujourd'hui ?",
@@ -110,37 +119,34 @@ phrases_accueil = [
 if "placeholder_actuel" not in st.session_state:
     st.session_state.placeholder_actuel = random.choice(phrases_accueil)
 
-# --- EN-TÊTE DE L'APPLICATION ---
-col_logo, col_vocal, col_clear = st.columns([7, 1.5, 1.5])
-
-with col_vocal:
-    if st.button("📞", help="Lancer un appel direct"):
-        st.toast("ℹ️ Pour le moment, je ne suis pas disponible à parler.", icon="🔊")
-
+# --- BOUTONS D'EN-TÊTE SANS LES ICÔNES DE PAROLE ---
+col_logo, col_clear = st.columns([8.5, 1.5])
 with col_clear:
     if st.button("🗑️", help="Nouvelle discussion"):
         st.session_state.messages = []
         st.session_state.placeholder_actuel = random.choice(phrases_accueil)
         st.rerun()
 
-# --- ÉCRAN D'ACCUEIL INITIAL ---
+# --- ÉCRAN D'ACCUEIL AVEC TON LOGO LOCAL ---
 if len(st.session_state.messages) == 0:
     st.markdown(f"""
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
+            <img src="app/static/{URL_AVATAR_AI}" width="90" style="border-radius: 50%; margin-bottom: 1rem; border: 2px solid #424242; object-fit: cover; height: 90px;">
             <div style="font-size: 2.2rem; color: #ffffff; font-weight: bold; margin-bottom: 0.2rem;">{AI_DISPLAY_NAME}</div>
             <p style="color: #8e8e93; font-size: 1rem;">Par {USER_NAME}</p>
         </div>
     """, unsafe_allow_html=True)
 
-# --- RENDU DE LA DISCUSSION ---
+# --- RENDU DE LA DISCUSSION AVEC TON IMAGE EN AVATAR ---
 for msg in st.session_state.messages:
     author = USER_NAME if msg["role"] == "user" else AI_DISPLAY_NAME
-    with st.chat_message(msg["role"]):
+    avatar_img = URL_AVATAR_USER if msg["role"] == "user" else URL_AVATAR_AI
+        
+    with st.chat_message(msg["role"], avatar=avatar_img):
         st.markdown(f'<div class="message-author">{author}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="chat-text">{msg["content"]}</div>', unsafe_allow_html=True)
 
-# --- LE VRAI BOUTON MICRO INJECTÉ ET POSITIONNÉ DANS LA BARRE ---
-# Utilisation de colonnes fantômes et positionnement absolu pour le glisser dans la barre de saisie
+# --- LE BOUTON MICRO INJECTÉ DANS LA BARRE ---
 st.markdown('<div class="floating-mic-container">', unsafe_allow_html=True)
 if st.button("🎙️", key="inline_mic", help="Dictée vocale"):
     st.toast("ℹ️ Pour le moment, je ne suis pas disponible à parler.", icon="🎙️")
@@ -150,17 +156,16 @@ st.markdown('</div>', unsafe_allow_html=True)
 question = st.chat_input(st.session_state.placeholder_actuel)
 
 if question:
-    # TEST DE LA CONNEXION AVANT TOUTE CHOSE
     if not verifier_connexion():
         st.error("⚠️ Connexion réseau instable ou indisponible. Impossible de joindre Charles IA pour le moment. Veuillez réessayer.")
     else:
-        # 1. Enregistrement et affichage du message de l'utilisateur
+        # 1. Enregistrement utilisateur
         st.session_state.messages.append({"role": "user", "content": question})
-        with st.chat_message("user"):
+        with st.chat_message("user", avatar=URL_AVATAR_USER):
             st.markdown(f'<div class="message-author">{USER_NAME}</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="chat-text">{question}</div>', unsafe_allow_html=True)
 
-        # 2. Collecte de données discrète (Recherche)
+        # 2. Recherche discrète
         context = ""
         try:
             with DDGS() as ddgs:
@@ -170,8 +175,8 @@ if question:
         except Exception:
             pass
 
-        # 3. Génération de la réponse pro par Charles IA
-        with st.chat_message("assistant"):
+        # 3. Génération IA
+        with st.chat_message("assistant", avatar=URL_AVATAR_AI):
             st.markdown(f'<div class="message-author">{AI_DISPLAY_NAME}</div>', unsafe_allow_html=True)
             
             if GROQ_API_KEY:
@@ -182,9 +187,9 @@ if question:
                     
                     CONSIGNES STRICTES :
                     - Si l'utilisateur te demande qui t'a créé ou qui t'a programmé, réponds fièrement que ton créateur est l'ingénieur Charles Joseph.
-                    - Rédige tes réponses en français. Sois clair, fluide, moderne et direct.
-                    - À la toute fin de ta réponse, pose TOUJOURS une ou deux questions de suivi intelligentes pour relancer l'utilisateur et approfondir son sujet.
-                    - Utilise un formatage Markdown standard (mots clés importants en gras et listes à puces si nécessaire). Pas d'émojis superflus.
+                    - Rédige tes réponses en français, de manière claire, moderne et fluide.
+                    - À la toute fin de ta réponse, pose TOUJOURS une ou deux questions de suivi intelligentes pour relancer l'utilisateur.
+                    - Utilise un formatage Markdown standard avec du gras. Pas d'émojis superflus.
                     """
 
                     prompt = f"Contexte de recherche :\n{context}\n\nQuestion de l'utilisateur ({USER_NAME}) :\n{question}"
