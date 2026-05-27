@@ -31,7 +31,7 @@ def verifier_connexion():
     except Exception:
         return False
 
-# --- STYLE CSS APPLI MOBILE INTERFACE ULTRA-ÉPURÉE ---
+# --- STYLE CSS APPLI MOBILE INTERFACE ULTRA-ÉPURÉE & BOUTON BLEU ---
 st.markdown(f"""
     <style>
     html, body, [data-testid="stAppViewContainer"] {{
@@ -77,7 +77,7 @@ st.markdown(f"""
         margin-top: 0px;
     }}
     
-    /* --- CONFIGURATION DE LA BARRE DE SAISIE MINIMALISTE --- */
+    /* --- CONFIGURATION DE LA BARRE DE SAISIE --- */
     [data-testid="stChatInput"] {{
         background-color: #2f2f2f !important;
         border-radius: 26px !important;
@@ -88,9 +88,25 @@ st.markdown(f"""
         color: #ffffff !important;
         font-size: 1rem !important;
     }}
+    
+    /* --- FORCER LE BOUTON D'ENVOI EN BLEU VIF ET 100% VISIBLE --- */
     [data-testid="stChatInput"] button {{
-        background-color: #ffffff !important;
+        background-color: #007aff !important; /* Couleur bleue */
         border-radius: 50% !important;
+        opacity: 1 !important; /* Visible à 100% en permanence */
+        transition: transform 0.2s ease;
+    }}
+    
+    /* Forcer la flèche blanche à l'intérieur à rester bien blanche et nette */
+    [data-testid="stChatInput"] button svg {{
+        fill: #ffffff !important;
+        color: #ffffff !important;
+        opacity: 1 !important;
+    }}
+    
+    /* Un petit effet de retour quand on clique dessus */
+    [data-testid="stChatInput"] button:active {{
+        transform: scale(0.90);
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -124,7 +140,7 @@ phrases_accueil = [
 if "placeholder_actuel" not in st.session_state:
     st.session_state.placeholder_actuel = random.choice(phrases_accueil)
 
-# --- ÉCRAN D'ACCUEIL SIMPLE (SANS BOUTONS EN HAUT) ---
+# --- ÉCRAN D'ACCUEIL SIMPLE ---
 if len(st.session_state.messages) == 0:
     st.markdown(f"""
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 65vh; text-align: center;">
