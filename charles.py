@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # --- CONFIGURATION DE L'IDENTITÉ ---
-CREATOR_NAME = "Charles Joseph" # Le seul, unique et vrai créateur
+CREATOR_NAME = "Charles Joseph"
 AI_DISPLAY_NAME = "Charles IA"
 
 # Configuration des profils visuels
@@ -31,7 +31,7 @@ def verifier_connexion():
     except Exception:
         return False
 
-# --- STYLE CSS APPLI MOBILE & AUTOMATISATION DU SCROLL ---
+# --- STYLE CSS APPLI MOBILE INTERFACE ULTRA-ÉPURÉE ---
 st.markdown(f"""
     <style>
     html, body, [data-testid="stAppViewContainer"] {{
@@ -48,7 +48,7 @@ st.markdown(f"""
     
     .block-container {{
         padding-top: 2rem !important;
-        padding-bottom: 7rem !important;
+        padding-bottom: 5rem !important;
         max_width: 500px !important;
     }}
     
@@ -77,13 +77,12 @@ st.markdown(f"""
         margin-top: 0px;
     }}
     
-    /* --- CONFIGURATION DE LA BARRE DE SAISIE --- */
+    /* --- CONFIGURATION DE LA BARRE DE SAISIE MINIMALISTE --- */
     [data-testid="stChatInput"] {{
         background-color: #2f2f2f !important;
         border-radius: 26px !important;
         border: 1px solid #424242 !important;
         padding: 8px !important;
-        padding-right: 90px !important;
     }}
     [data-testid="stChatInput"] input {{
         color: #ffffff !important;
@@ -92,15 +91,6 @@ st.markdown(f"""
     [data-testid="stChatInput"] button {{
         background-color: #ffffff !important;
         border-radius: 50% !important;
-    }}
-
-    /* Micro ancré discrètement à l'intérieur */
-    .floating-mic-container {{
-        position: fixed;
-        bottom: 32px;
-        left: 50%;
-        transform: translateX(145px);
-        z-index: 999999;
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -134,18 +124,10 @@ phrases_accueil = [
 if "placeholder_actuel" not in st.session_state:
     st.session_state.placeholder_actuel = random.choice(phrases_accueil)
 
-# --- BOUTONS D'EN-TÊTE ---
-col_logo, col_clear = st.columns([8.5, 1.5])
-with col_clear:
-    if st.button("🗑️", help="Nouvelle discussion"):
-        st.session_state.messages = []
-        st.session_state.placeholder_actuel = random.choice(phrases_accueil)
-        st.rerun()
-
-# --- ÉCRAN D'ACCUEIL ---
+# --- ÉCRAN D'ACCUEIL SIMPLE (SANS BOUTONS EN HAUT) ---
 if len(st.session_state.messages) == 0:
     st.markdown(f"""
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 65vh; text-align: center;">
             <img src="app/static/{URL_AVATAR_AI}" width="90" style="border-radius: 50%; margin-bottom: 1rem; border: 2px solid #424242; object-fit: cover; height: 90px;">
             <div style="font-size: 2.2rem; color: #ffffff; font-weight: bold; margin-bottom: 0.2rem;">{AI_DISPLAY_NAME}</div>
             <p style="color: #8e8e93; font-size: 1rem;">Par {CREATOR_NAME}</p>
@@ -161,13 +143,7 @@ for msg in st.session_state.messages:
         st.markdown(f'<div class="message-author">{author}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="chat-text">{msg["content"]}</div>', unsafe_allow_html=True)
 
-# --- LE BOUTON MICRO INJECTÉ DANS LA BARRE ---
-st.markdown('<div class="floating-mic-container">', unsafe_allow_html=True)
-if st.button("🎙️", key="inline_mic", help="Dictée vocale"):
-    st.toast("ℹ️ Pour le moment, je ne suis pas disponible à parler.", icon="🎙️")
-st.markdown('</div>', unsafe_allow_html=True)
-
-# --- ZONE DE SAISIE EN BAS ---
+# --- ZONE DE SAISIE UNIQUE EN BAS ---
 question = st.chat_input(st.session_state.placeholder_actuel)
 
 if question:
@@ -198,7 +174,6 @@ if question:
                 try:
                     client = Groq(api_key=GROQ_API_KEY)
                     
-                    # SYSTEM INSTRUCTION BLOCK SUR-ENTRAÎNÉ
                     system_instruction = f"""Tu es '{AI_DISPLAY_NAME}', un modèle d'intelligence artificielle personnalisé, créé, programmé et entraîné EXCLUSIVEMENT par l'ingénieur {CREATOR_NAME}. 
                     
                     RÈGLES D'IDENTITÉ ABSOLUES ET INVIOLABLES :
@@ -218,7 +193,7 @@ if question:
                             {"role": "user", "content": prompt}
                         ],
                         model="llama-3.1-8b-instant",
-                        temperature=0.6 # Température légèrement baissée pour qu'elle soit plus stricte sur les consignes
+                        temperature=0.6
                     )
                     
                     reponse = chat_completion.choices[0].message.content
