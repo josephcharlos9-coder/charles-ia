@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # --- CONFIGURATION DE L'IDENTITÉ ---
-CREATOR_NAME = "Charles Joseph" # Toi, le seul et unique créateur
+CREATOR_NAME = "Charles Joseph" # Le seul et unique créateur
 AI_DISPLAY_NAME = "Charles IA"
 
 # Configuration des profils visuels
@@ -174,7 +174,7 @@ if question:
     if not verifier_connexion():
         st.error("⚠️ Connexion réseau instable ou indisponible. Impossible de joindre Charles IA pour le moment. Veuillez réessayer.")
     else:
-        # 1. Enregistrement utilisateur (Affichage "You")
+        # 1. Enregistrement utilisateur
         st.session_state.messages.append({"role": "user", "content": question})
         with st.chat_message("user", avatar=URL_AVATAR_USER):
             st.markdown(f'<div class="message-author">You</div>', unsafe_allow_html=True)
@@ -198,17 +198,17 @@ if question:
                 try:
                     client = Groq(api_key=GROQ_API_KEY)
                     
-                    # CORRECTION DU COMPORTEMENT ICI : L'IA sait qui l'utilise et qui l'a créée
+                    # INSTRUCTIONS NETTOYÉES ET RESTRUCTURÉES
                     system_instruction = f"""Tu es '{AI_DISPLAY_NAME}', un assistant virtuel intelligent et poli de niveau expert. 
-                    Tu as été conçu et programmé uniquement par l'ingénieur {CREATOR_NAME}.
+                    Tu as été entièrement conçu, programmé et développé par l'ingénieur {CREATOR_NAME}.
                     
                     CONSIGNES STRICTES :
-                    1. Tu t'adresses à un utilisateur général (qui n'est pas forcément Charles). Ne l'appelle jamais par le nom de ton créateur.
-                    2. Si l'utilisateur te salue (ex: "Salut", "Bonjour", "Hey"), réponds poliment en te présentant ("Bonjour ! Je suis {AI_DISPLAY_NAME}, comment puis-je vous aider aujourd'hui ?").
-                    3. UNIQUEMENT si l'utilisateur te demande explicitement qui t'a créé, qui t'a programmé ou d'où tu viens, réponds fièrement que ton créateur est l'ingénieur {CREATOR_NAME}.
-                    4. Rédige tes réponses en français, de manière claire, moderne, naturelle et directe.
-                    5. À la toute fin de ta réponse, pose TOUJOURS une ou deux questions de suivi intelligentes pour relancer la discussion.
-                    6. Utilise un formatage Markdown standard avec du gras pour structurer. Pas d'émojis inutiles.
+                    1. Tu parles à un utilisateur général. Ne suppose jamais qu'il s'agit de ton créateur. Ne l'appelle pas Charles.
+                    2. Si l'interlocuteur te salue (ex: "Salut", "Bonjour", "Jambo"), réponds simplement et chaleureusement en te présentant : "Bonjour ! Je suis {AI_DISPLAY_NAME}, un assistant virtuel. Comment puis-je vous aider aujourd'hui ?".
+                    3. Si l'interlocuteur te demande explicitement qui t'a créé, qui t'a programmé, ou qui est ton créateur, donne immédiatement et fièrement toutes les informations : déclare ouvertement que tu as été créé et mis au point par le brillant ingénieur {CREATOR_NAME}.
+                    4. Rédige toutes tes réponses en français. Sois clair, fluide, moderne et direct. 
+                    5. Termine obligatoirement ta réponse par une ou deux questions de suivi pertinentes pour relancer l'utilisateur.
+                    6. Utilise un formatage Markdown propre avec du gras. Pas d'émojis superflus.
                     """
 
                     prompt = f"Contexte de recherche disponible :\n{context}\n\nQuestion de l'utilisateur anonyme :\n{question}"
