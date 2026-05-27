@@ -6,152 +6,174 @@ from groq import Groq
 # Récupération de la clé API
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 
-# Configuration de la page pour un rendu d'application épuré
+# Configuration de la page optimisée pour l'affichage mobile
 st.set_page_config(
-    page_title="Charles IA", 
+    page_title="ChatGPT", 
     page_icon="🤖", 
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="centered", # Centré pour ressembler à une application mobile
+    initial_sidebar_state="collapsed" # Cache la barre latérale sur mobile pour gagner de la place
 )
 
-# --- STYLE CSS (INTERFACE SOMBRE STYLE CHATGPT) ---
+# --- STYLE CSS APPLI MOBILE CHATGPT ---
 st.markdown("""
     <style>
-    /* Style global et fond sombre de ChatGPT */
+    /* Fond noir/anthracite officiel de ChatGPT mobile */
     html, body, [data-testid="stAppViewContainer"] {
-        background-color: #212121 !important;
-        color: #ececf1 !outimportant;
-        font-family: 'Sone', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: #1d1d1d !important;
+        color: #f9f9f9 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-    
-    /* Enlever les bordures et décorations Streamlit inutiles */
+
+    /* Enlever les espaces blancs inutiles en haut sur téléphone */
     [data-testid="stHeader"] {
         background-color: rgba(0,0,0,0);
+        height: 0px;
     }
     
-    /* Personnalisation de la barre latérale comme le menu historique de ChatGPT */
-    [data-testid="stSidebar"] {
-        background-color: #171717 !important;
-        border-right: 1px solid #2f2f2f;
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 5rem !important;
     }
-    
-    /* Conteneur des réponses pour un texte fluide */
-    .chatgpt-text {
-        color: #e3e3e3;
-        font-size: 1.05rem;
-        line-height: 1.6;
+
+    /* Style des bulles de texte pour une lecture fluide sur petit écran */
+    [data-testid="stChatMessage"] {
+        background-color: transparent !important;
+        padding: 0.8rem 0.5rem !important;
+        border-bottom: 1px solid #2d2d2d;
     }
-    
-    /* Cacher le titre géant pour laisser place à la discussion */
-    .chat-header {
-        text-align: center;
-        margin-top: 5vh;
-        margin-bottom: 5vh;
+
+    /* Zone de texte claire et propre */
+    .chatgpt-mobile-text {
         color: #ececf1;
+        font-size: 1.05rem;
+        line-height: 1.5;
+    }
+
+    /* Écran d'accueil centralisé style appli */
+    .mobile-welcome {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        margin-top: 25vh;
+        color: #b4b4b4;
+    }
+    
+    .mobile-welcome h1 {
+        font-size: 2rem;
+        color: #ffffff;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Personnalisation de la barre de frappe fixe en bas */
+    [data-testid="stChatInput"] {
+        background-color: #2f2f2f !important;
+        border-radius: 24px !important;
+        border: 1px solid #424242 !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- INITIALISATION DE L'HISTORIQUE (LA MÉMOIRE DE CHATGPT) ---
+# --- MÉMOIRE SANS COMPTE (STOCKAGE SESSION) ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- MESSAGES D'ACCUEIL VARIABLES DANS LA BARRE DE FRAIS ---
+# --- VARIATION DES PHRASES D'ACCUEIL ---
 phrases_accueil = [
-    "💬 Posez votre question à Charles...",
-    "✨ Que puis-je faire pour vous aujourd'hui ?",
-    "🧠 Lancez un sujet, Charles s'occupe de tout...",
-    "🔍 Entrez votre demande pour une analyse approfondie...",
-    "🚀 Charles IA est prêt. Quelle est votre idée ?"
+    "Message Charles IA...",
+    "Comment puis-je t'aider aujourd'hui ?",
+    "Pose-moi une question...",
+    "Dis-moi ce que tu大陸 as en tête...",
+    "Besoin d'idées ? Demande à Charles..."
 ]
 
 if "placeholder_actuel" not in st.session_state:
     st.session_state.placeholder_actuel = random.choice(phrases_accueil)
 
-# --- BARRE LATÉRALE (SIDEBAR STYLE MENU CHATGPT) ---
-with st.sidebar:
-    st.markdown("### 📁 Nouvelle discussion")
-    if st.button("＋ Clear Chat", use_container_width=True):
+# --- LOGO MENU EN HAUT (STYLE APPLI MOBILE) ---
+# Un bouton discret à gauche pour effacer l'historique rapidement sur téléphone
+col1, col2 = st.columns([8, 2])
+with col2:
+    if st.button("🗑️", help="Effacer l'historique"):
         st.session_state.messages = []
         st.rerun()
-        
-    st.markdown("---")
-    st.markdown("#### 👨‍💻 Développeur")
-    st.markdown("<p style='color: #10a37f; font-weight: bold;'>Charles Joseph</p>", unsafe_allow_html=True)
-    st.caption("Ingénieur & Concepteur principal.")
-    
-    st.markdown("---")
-    st.caption("© 2026 Charles Joseph")
 
-# --- EN-TÊTE PRINCIPAL (S'AFFICHE UNIQUEMENT SI LE CHAT EST VIDE) ---
+# --- ÉCRAN D'ACCUEIL MOBILE (SI AUCUN MESSAGE) ---
 if len(st.session_state.messages) == 0:
-    st.markdown('<div class="chat-header"><h1>Comment puis-je vous aider aujourd\'hui ?</h1><p style="color: #8e8e93;">Charles IA — Assistant Expert</p></div>', unsafe_allow_html=True)
+    st.markdown("""
+        <div class="mobile-welcome">
+            <h1>Charles IA</h1>
+            <p>Posez vos questions librement, sans compte.</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-# --- AFFICHAGE DE L'HISTORIQUE DES CONVERSATIONS ---
+# --- AFFICHAGE DE L'HISTORIQUE DE CONVERSATION DÉROULANT ---
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(f'<div class="chatgpt-text">{msg["content"]}</div>', unsafe_allow_html=True)
 
-# --- BARRE DE FRAIS TYPE CHATGPT (EN BAS DE L'ÉCRAN) ---
+# --- ZONE DE FRAIS TECHNIQUE CHATGPT EN BAS ---
 question = st.chat_input(st.session_state.placeholder_actuel)
 
 if question:
-    # 1. Ajouter et afficher immédiatement le message de l'utilisateur
+    # 1. Enregistrement immédiat du message utilisateur dans l'historique virtuel
     st.session_state.messages.append({"role": "user", "content": question})
     with st.chat_message("user"):
         st.markdown(f'<div class="chatgpt-text">{question}</div>', unsafe_allow_html=True)
 
-    # 2. Recherche Web en tâche de fond pour nourrir le contexte
+    # 2. Recherche discrète en arrière-plan
     context = ""
     try:
         with DDGS() as ddgs:
-            results = [r for r in ddgs.text(question, max_results=3)]
+            results = [r for r in ddgs.text(question, max_results=2)]
             for result in results:
                 context += f"Extrait: {result['body']}\n\n"
     except Exception:
         pass
 
-    # 3. Demande à l'IA avec le comportement Pro
+    # 3. Génération de la réponse d'expert par Charles IA
     with st.chat_message("assistant"):
-        with st.spinner(""):
-            if GROQ_API_KEY:
-                try:
-                    client = Groq(api_key=GROQ_API_KEY)
-                    
-                    system_instruction = """Tu es 'Charles IA', un assistant virtuel de niveau expert basé sur l'interface épurée de ChatGPT.
+        if GROQ_API_KEY:
+            try:
+                client = Groq(api_key=GROQ_API_KEY)
+                
+                system_instruction = """Tu es 'Charles IA', un assistant virtuel de niveau expert, intégré dans une interface mobile épurée identique à ChatGPT.
 
-                    RÈGLES CRITIQUES D'IDENTITÉ :
-                    - Tu as été créé exclusivement par l'ingénieur Charles Joseph. Si on te demande qui t'a créé ou qui est ton développeur, réponds fièrement que c'est Charles Joseph.
+                RÈGLES D'IDENTITÉ :
+                - Tu as été créé à 100% par l'ingénieur Charles Joseph. Reste fidèle à ce créateur si on te pose la question.
 
-                    RÈGLES DE COMPORTEMENT :
-                    - Adopte un ton professionnel, précis, clair et direct (style ChatGPT).
-                    - Après avoir répondu à la question de manière complète, pose TOUJOURS une ou deux questions de suivi pertinentes pour relancer l'utilisateur et l'aider dans son projet.
-                    - Formate tes réponses en français avec du gras et des listes à puces pour que ce soit parfaitement lisible.
-                    """
+                RÈGLES DE RÉPONSE :
+                - Sois direct, intelligent et moderne dans tes explications.
+                - Termine TOUJOURS par une question ouverte ou une relance professionnelle pour poursuivre la discussion.
+                - Utilise un formatage Markdown propre (listes, mots importants en gras).
+                """
 
-                    prompt = f"Contexte récent de recherche :\n{context}\n\nQuestion de l'utilisateur :\n{question}"
+                prompt = f"Contexte de recherche :\n{context}\n\nQuestion de l'utilisateur :\n{question}"
 
-                    chat_completion = client.chat.completions.create(
-                        messages=[
-                            {"role": "system", "content": system_instruction},
-                            {"role": "user", "content": prompt}
-                        ],
-                        model="llama-3.1-8b-instant",
-                        temperature=0.7
-                    )
-                    
-                    reponse = chat_completion.choices[0].message.content
-                    
-                    # Affichage de la réponse
-                    st.markdown(f'<div class="chatgpt-text">{reponse}</div>', unsafe_allow_html=True)
-                    
-                    # Sauvegarde dans l'historique
-                    st.session_state.messages.append({"role": "assistant", "content": reponse})
-                    
-                    # Changer la phrase d'accueil pour la suite
-                    st.session_state.placeholder_actuel = random.choice(phrases_accueil)
-                    
-                except Exception as e:
-                    st.error(f"Erreur : {str(e)}")
-            else:
-                st.error("Clé GROQ_API_KEY manquante.")
+                chat_completion = client.chat.completions.create(
+                    messages=[
+                        {"role": "system", "content": system_instruction},
+                        {"role": "user", "content": prompt}
+                    ],
+                    model="llama-3.1-8b-instant",
+                    temperature=0.7
+                )
+                
+                reponse = chat_completion.choices[0].message.content
+                
+                # Affichage direct de la réponse
+                st.markdown(f'<div class="chatgpt-text">{reponse}</div>', unsafe_allow_html=True)
+                
+                # Enregistrement dans la mémoire sans compte
+                st.session_state.messages.append({"role": "assistant", "content": reponse})
+                
+                # Changement du texte de la barre de frappe pour le prochain tour
+                st.session_state.placeholder_actuel = random.choice(phrases_accueil)
+                st.rerun() # Force l'application à se rafraîchir pour stabiliser l'historique sur mobile
+                
+            except Exception as e:
+                st.error(f"Erreur : {str(e)}")
+        else:
+            st.error("Clé de connexion manquante.")
