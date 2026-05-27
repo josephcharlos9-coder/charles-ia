@@ -1,4 +1,5 @@
 import streamlit as st
+import random
 from duckduckgo_search import DDGS
 from groq import Groq
 
@@ -13,15 +14,14 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- STYLE CSS PERSONNALISÉ (DESIGN PREMIUM CORRIGÉ) ---
+# --- STYLE CSS PERSONNALISÉ (DESIGN TYPE GEMINI) ---
 st.markdown("""
     <style>
-    /* Modification de la police globale */
     html, body, [data-testid="stSidebarView"] {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     
-    /* Design du titre principal */
+    /* Titre principal */
     .main-title {
         font-size: 2.8rem;
         font-weight: 800;
@@ -31,21 +31,23 @@ st.markdown("""
         margin-bottom: 0.2rem;
     }
     
-    /* Style de la barre latérale */
+    /* Barre latérale */
     [data-testid="stSidebar"] {
         background-color: #111b21;
         border-right: 1px solid #223344;
     }
     
-    /* Boîtes de message stylisées */
+    /* Boîte de message stylisée avec le drapeau */
     .response-box {
         background-color: #1e293b;
-        padding: 20px;
-        border-radius: 12px;
-        border-left: 5px solid #0072FF;
+        padding: 22px;
+        border-radius: 16px;
+        border-left: 5px solid #00FFCC;
         margin-top: 15px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         color: #ffffff;
+        font-size: 1.05rem;
+        line-height: 1.6;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -71,13 +73,21 @@ with st.sidebar:
     st.caption("© 2026 Charles Joseph - Tous droits réservés.")
 
 # --- CONTENU PRINCIPAL ---
-st.markdown('<h1 class="main-title">🤖 Charles IA</h1>', unsafe_allow_html=True)
-st.caption("🚀 Assistant virtuel de niveau Expert — Propulsé par une intelligence en temps réel")
-
+st.markdown('<h1 class="main-title">🤖 Charles IA ⛳</h1>', unsafe_allow_html=True)
+st.caption("🚀 Assistant virtuel de niveau Expert — Style Gemini & Recherche Temps Réel")
 st.markdown("---")
 
-# Zone d'interaction
-question = st.text_input("💬 Entrez votre message ou votre question ici :", placeholder="Ex: Quelles sont les dernières avancées en informatique ?")
+# --- MESSAGES D'ACCUEIL VARIABLES (ALÉATOIRES) ---
+# Une liste de phrases qui va changer à chaque fois que la page s'actualise
+phrases_accueil = [    "💬 Posez votre question à Charles...",    "✨ Que puis-je faire pour vous aujourd'hui ?",    "🧠 Lancez un sujet, Charles s'occupe de la recherche...",    "🔍 Entrez votre demande pour une analyse en temps réel...",    "🚀 Charles IA est prêt. Quelle est votre idée ?"]
+
+# On choisit une phrase au hasard et on la garde en mémoire pour la session
+if "placeholder_actuel" not in st.session_state:
+    st.session_state.placeholder_actuel = random.choice(phrases_accueil)
+
+# --- ZONE DE FRAPPE TYPE GEMINI (CHAT INPUT EN BAS) ---
+# st.chat_input place automatiquement la barre d'écriture tout en bas de l'écran, comme Gemini ou ChatGPT
+question = st.chat_input(st.session_state.placeholder_actuel)
 
 if question:
     # 1. Recherche Web via DuckDuckGo
@@ -118,8 +128,14 @@ if question:
                     temperature=0.7
                 )
                 
-                # Affichage de la réponse dans une boîte stylisée
-                st.markdown('### 🏢 Réponse de votre assistant :')
+                # Changement de la phrase d'accueil pour la prochaine question
+                st.session_state.placeholder_actuel = random.choice(phrases_accueil)
+                
+                # Affichage du message de l'utilisateur
+                st.chat_message("user").write(question)
+                
+                # Affichage de la réponse de Charles avec le drapeau ⛳
+                st.markdown('### ⛳ Réponse de Charles IA :')
                 st.markdown(f'<div class="response-box">{chat_completion.choices[0].message.content}</div>', unsafe_allow_html=True)
                 
             except Exception as e:
