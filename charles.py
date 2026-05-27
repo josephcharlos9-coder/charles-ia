@@ -8,7 +8,7 @@ GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 
 # Configuration de la page optimisée pour l'affichage mobile
 st.set_page_config(
-    page_title="ChatGPT", 
+    page_title="CHARLES IA", 
     page_icon="🤖", 
     layout="centered", 
     initial_sidebar_state="collapsed"
