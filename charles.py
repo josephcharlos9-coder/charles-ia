@@ -27,7 +27,7 @@ def verifier_connexion():
     except Exception:
         return False
 
-# --- STYLE CSS (DUPLICATION CHATGPT MOBILE AVEC OPTIONS VOCALES) ---
+# --- STYLE CSS AVANCÉ (MICRO DANS LA BARRE) ---
 st.markdown(f"""
     <style>
     html, body, [data-testid="stAppViewContainer"] {{
@@ -68,12 +68,13 @@ st.markdown(f"""
         margin-top: 0px;
     }}
     
-    /* --- BARRE DE RECHERCHE TEXTE + VOCAL INCORPORÉ --- */
+    /* --- STYLE DE LA BARRE CHATINPUT --- */
     [data-testid="stChatInput"] {{
         background-color: #2f2f2f !important;
         border-radius: 26px !important;
         border: 1px solid #424242 !important;
         padding: 8px !important;
+        padding-right: 90px !important; /* Laisse de la place pour le bouton d'envoi ET le micro */
     }}
     [data-testid="stChatInput"] input {{
         color: #ffffff !important;
@@ -83,16 +84,14 @@ st.markdown(f"""
         background-color: #ffffff !important;
         border-radius: 50% !important;
     }}
-    
-    /* Style pour la zone des faux boutons sous la barre */
-    .vocal-container {{
-        display: flex;
-        justify-content: space-between;
-        margin-top: -55px;
-        position: relative;
-        z-index: 99999;
-        padding: 0 15px;
-        pointer-events: none; /* Laisse le clic traverser vers les vrais composants invisibles si besoin */
+
+    /* Style du conteneur flottant pour le micro */
+    .floating-mic-container {{
+        position: fixed;
+        bottom: 32px; /* Aligné avec la hauteur standard du chat_input sur mobile */
+        left: 50%;
+        transform: translateX(150px); /* Pousse le bouton vers la droite à l'intérieur de la zone */
+        z-index: 999999;
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -111,11 +110,10 @@ phrases_accueil = [
 if "placeholder_actuel" not in st.session_state:
     st.session_state.placeholder_actuel = random.choice(phrases_accueil)
 
-# --- EN-TÊTE DE L'APPLICATION (BOUTON NETTOYAGE ET INTEGRATION VOCAL APPLI) ---
+# --- EN-TÊTE DE L'APPLICATION ---
 col_logo, col_vocal, col_clear = st.columns([7, 1.5, 1.5])
 
 with col_vocal:
-    # Icône "Direct" / Appel tout en haut comme sur certaines versions de l'application
     if st.button("📞", help="Lancer un appel direct"):
         st.toast("ℹ️ Pour le moment, je ne suis pas disponible à parler.", icon="🔊")
 
@@ -141,12 +139,12 @@ for msg in st.session_state.messages:
         st.markdown(f'<div class="message-author">{author}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="chat-text">{msg["content"]}</div>', unsafe_allow_html=True)
 
-# --- DEUX BOUTONS POUR SIMULER LE VOCAL DE L'IMAGE ---
-# On place un bouton juste au-dessus de la barre d'entrée pour capturer l'action du micro
-col_space, col_mic = st.columns([8.5, 1.5])
-with col_mic:
-    if st.button("🎙️", help="Activer le dictaphone vocal"):
-        st.toast("ℹ️ Pour le moment, je ne suis pas disponible à parler.", icon="🎙️")
+# --- LE VRAI BOUTON MICRO INJECTÉ ET POSITIONNÉ DANS LA BARRE ---
+# Utilisation de colonnes fantômes et positionnement absolu pour le glisser dans la barre de saisie
+st.markdown('<div class="floating-mic-container">', unsafe_allow_html=True)
+if st.button("🎙️", key="inline_mic", help="Dictée vocale"):
+    st.toast("ℹ️ Pour le moment, je ne suis pas disponible à parler.", icon="🎙️")
+st.markdown('</div>', unsafe_allow_html=True)
 
 # --- ZONE DE SAISIE EN BAS ---
 question = st.chat_input(st.session_state.placeholder_actuel)
