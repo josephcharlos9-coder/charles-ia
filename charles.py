@@ -1,3 +1,4 @@
+
 import streamlit as st
 import random
 import urllib.request
@@ -19,7 +20,6 @@ st.set_page_config(
 USER_NAME = "Charles Joseph"
 AI_DISPLAY_NAME = "Charles IA"
 
-# Utilisation directe du fichier avatar.jpg présent dans ton dépôt GitHub
 URL_AVATAR_AI = "avatar.jpg"
 URL_AVATAR_USER = "avatar.jpg"
 
@@ -31,13 +31,14 @@ def verifier_connexion():
     except Exception:
         return False
 
-# --- STYLE CSS APPLI MOBILE (LOOK CHATGPT EXCLUSIF) ---
+# --- STYLE CSS APPLI MOBILE & AUTOMATISATION DU SCROLL ---
 st.markdown(f"""
     <style>
     html, body, [data-testid="stAppViewContainer"] {{
         background-color: #171717 !important;
         color: #ffffff !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        scroll-behavior: smooth; /* Rend le défilement fluide */
     }}
     
     [data-testid="stHeader"] {{
@@ -57,7 +58,6 @@ st.markdown(f"""
         border-bottom: 1px solid #2d2d2d;
     }}
     
-    /* Rendre l'image parfaitement ronde et fluide */
     [data-testid="stChatMessageAvatar"] {{
         background-color: transparent !important;
         border-radius: 50% !important;
@@ -104,6 +104,23 @@ st.markdown(f"""
     }}
     </style>
 """, unsafe_allow_html=True)
+
+# --- INJECTION JAVASCRIPT POUR LE DEFILEMENT AUTOMATIQUE STABLE ---
+st.components.v1.html("""
+    <script>
+    function scrollToBottom() {
+        // Recherche l'élément principal de défilement de Streamlit
+        var mainContainer = window.parent.document.querySelector('[data-testid="stAppViewContainer"]');
+        if (mainContainer) {
+            mainContainer.scrollTop = mainContainer.scrollHeight;
+        }
+    }
+    // Force le scroll immédiatement au chargement et après un léger délai pour laisser l'IA écrire
+    setTimeout(scrollToBottom, 100);
+    setTimeout(scrollToBottom, 300);
+    setTimeout(scrollToBottom, 500);
+    </script>
+""", height=0)
 
 # --- INITIALISATION DE L'HISTORIQUE ---
 if "messages" not in st.session_state:
