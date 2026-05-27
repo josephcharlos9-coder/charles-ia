@@ -1,4 +1,3 @@
-
 import streamlit as st
 import random
 import urllib.request
@@ -16,12 +15,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- CONFIGURATION DE L'IDENTITÉ ET DE TON AVATAR LOCAL ---
+# --- CONFIGURATION DE L'IDENTITÉ ET DES AVATARS ---
 USER_NAME = "Charles Joseph"
 AI_DISPLAY_NAME = "Charles IA"
 
+# Ta photo est attribuée UNIQUEMENT à l'IA
 URL_AVATAR_AI = "avatar.jpg"
-URL_AVATAR_USER = "avatar.jpg"
+# Pour tes questions, on utilise l'icône utilisateur par défaut de Streamlit (ou laisse "user")
+URL_AVATAR_USER = "user"
 
 # --- FONCTION DE VÉRIFICATION DE LA CONNEXION ---
 def verifier_connexion():
@@ -38,7 +39,7 @@ st.markdown(f"""
         background-color: #171717 !important;
         color: #ffffff !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        scroll-behavior: smooth; /* Rend le défilement fluide */
+        scroll-behavior: smooth;
     }}
     
     [data-testid="stHeader"] {{
@@ -109,13 +110,11 @@ st.markdown(f"""
 st.components.v1.html("""
     <script>
     function scrollToBottom() {
-        // Recherche l'élément principal de défilement de Streamlit
         var mainContainer = window.parent.document.querySelector('[data-testid="stAppViewContainer"]');
         if (mainContainer) {
             mainContainer.scrollTop = mainContainer.scrollHeight;
         }
     }
-    // Force le scroll immédiatement au chargement et après un léger délai pour laisser l'IA écrire
     setTimeout(scrollToBottom, 100);
     setTimeout(scrollToBottom, 300);
     setTimeout(scrollToBottom, 500);
@@ -136,7 +135,7 @@ phrases_accueil = [
 if "placeholder_actuel" not in st.session_state:
     st.session_state.placeholder_actuel = random.choice(phrases_accueil)
 
-# --- BOUTONS D'EN-TÊTE SANS LES ICÔNES DE PAROLE ---
+# --- BOUTONS D'EN-TÊTE ---
 col_logo, col_clear = st.columns([8.5, 1.5])
 with col_clear:
     if st.button("🗑️", help="Nouvelle discussion"):
@@ -154,7 +153,7 @@ if len(st.session_state.messages) == 0:
         </div>
     """, unsafe_allow_html=True)
 
-# --- RENDU DE LA DISCUSSION AVEC TON IMAGE EN AVATAR ---
+# --- RENDU DE LA DISCUSSION ---
 for msg in st.session_state.messages:
     author = USER_NAME if msg["role"] == "user" else AI_DISPLAY_NAME
     avatar_img = URL_AVATAR_USER if msg["role"] == "user" else URL_AVATAR_AI
@@ -176,7 +175,7 @@ if question:
     if not verifier_connexion():
         st.error("⚠️ Connexion réseau instable ou indisponible. Impossible de joindre Charles IA pour le moment. Veuillez réessayer.")
     else:
-        # 1. Enregistrement utilisateur
+        # 1. Enregistrement utilisateur (avec avatar standard "user")
         st.session_state.messages.append({"role": "user", "content": question})
         with st.chat_message("user", avatar=URL_AVATAR_USER):
             st.markdown(f'<div class="message-author">{USER_NAME}</div>', unsafe_allow_html=True)
@@ -192,7 +191,7 @@ if question:
         except Exception:
             pass
 
-        # 3. Génération IA
+        # 3. Génération IA (avec ton avatar.jpg)
         with st.chat_message("assistant", avatar=URL_AVATAR_AI):
             st.markdown(f'<div class="message-author">{AI_DISPLAY_NAME}</div>', unsafe_allow_html=True)
             
