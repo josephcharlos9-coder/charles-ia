@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- STYLE CSS PERSONNALISÉ (DESIGN PREMIUM) ---
+# --- STYLE CSS PERSONNALISÉ (DESIGN PREMIUM CORRIGÉ) ---
 st.markdown("""
     <style>
     /* Modification de la police globale */
@@ -37,12 +37,6 @@ st.markdown("""
         border-right: 1px solid #223344;
     }
     
-    /* Bouton personnalisé ou éléments mis en valeur */
-    .stTextInput data-testid="stWidgetLabel" {
-        color: #00FFCC !important;
-        font-weight: bold;
-    }
-    
     /* Boîtes de message stylisées */
     .response-box {
         background-color: #1e293b;
@@ -51,9 +45,10 @@ st.markdown("""
         border-left: 5px solid #0072FF;
         margin-top: 15px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        color: #ffffff;
     }
     </style>
-""", unsafe_unsafe_with_ingest_or_skip_and_error=True, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # --- BARRE LATÉRALE (SIDEBAR) ---
 with st.sidebar:
@@ -76,7 +71,6 @@ with st.sidebar:
     st.caption("© 2026 Charles Joseph - Tous droits réservés.")
 
 # --- CONTENU PRINCIPAL ---
-# Titre stylisé en HTML/CSS
 st.markdown('<h1 class="main-title">🤖 Charles IA</h1>', unsafe_allow_html=True)
 st.caption("🚀 Assistant virtuel de niveau Expert — Propulsé par une intelligence en temps réel")
 
