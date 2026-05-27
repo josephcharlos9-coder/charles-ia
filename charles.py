@@ -10,17 +10,17 @@ GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 st.set_page_config(
     page_title="ChatGPT", 
     page_icon="🤖", 
-    layout="centered", # Centré pour ressembler à une application mobile
-    initial_sidebar_state="collapsed" # Cache la barre latérale sur mobile pour gagner de la place
+    layout="centered", 
+    initial_sidebar_state="collapsed"
 )
 
-# --- STYLE CSS APPLI MOBILE CHATGPT ---
+# --- STYLE CSS APPLI MOBILE CHATGPT CORRIGÉ (TEXTE BLANC PUR) ---
 st.markdown("""
     <style>
     /* Fond noir/anthracite officiel de ChatGPT mobile */
     html, body, [data-testid="stAppViewContainer"] {
         background-color: #1d1d1d !important;
-        color: #f9f9f9 !important;
+        color: #ffffff !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
@@ -35,18 +35,20 @@ st.markdown("""
         padding-bottom: 5rem !important;
     }
 
-    /* Style des bulles de texte pour une lecture fluide sur petit écran */
+    /* Style des bulles de texte */
     [data-testid="stChatMessage"] {
         background-color: transparent !important;
         padding: 0.8rem 0.5rem !important;
         border-bottom: 1px solid #2d2d2d;
     }
 
-    /* Zone de texte claire et propre */
-    .chatgpt-mobile-text {
-        color: #ececf1;
+    /* TEXTE DE RÉPONSE BLANC ET TRÈS LUMINEUX */
+    .chatgpt-text, [data-testid="stChatMessage"] p, [data-testid="stMarkdownContainer"] p {
+        color: #ffffff !important;
         font-size: 1.05rem;
         line-height: 1.5;
+        font-weight: 400;
+        text-shadow: 0 0 1px rgba(255,255,255,0.1); /* Donne un aspect encore plus net et blanc */
     }
 
     /* Écran d'accueil centralisé style appli */
@@ -85,7 +87,7 @@ phrases_accueil = [
     "Message Charles IA...",
     "Comment puis-je t'aider aujourd'hui ?",
     "Pose-moi une question...",
-    "Dis-moi ce que tu大陸 as en tête...",
+    "Dis-moi ce que tu as en tête...",
     "Besoin d'idées ? Demande à Charles..."
 ]
 
@@ -93,7 +95,6 @@ if "placeholder_actuel" not in st.session_state:
     st.session_state.placeholder_actuel = random.choice(phrases_accueil)
 
 # --- LOGO MENU EN HAUT (STYLE APPLI MOBILE) ---
-# Un bouton discret à gauche pour effacer l'historique rapidement sur téléphone
 col1, col2 = st.columns([8, 2])
 with col2:
     if st.button("🗑️", help="Effacer l'historique"):
@@ -118,7 +119,7 @@ for msg in st.session_state.messages:
 question = st.chat_input(st.session_state.placeholder_actuel)
 
 if question:
-    # 1. Enregistrement immédiat du message utilisateur dans l'historique virtuel
+    # 1. Enregistrement immédiat du message utilisateur
     st.session_state.messages.append({"role": "user", "content": question})
     with st.chat_message("user"):
         st.markdown(f'<div class="chatgpt-text">{question}</div>', unsafe_allow_html=True)
@@ -146,7 +147,7 @@ if question:
 
                 RÈGLES DE RÉPONSE :
                 - Sois direct, intelligent et moderne dans tes explications.
-                - Termine TOUJOURS par une question ouverte ou une relance professionnelle pour poursuivre la discussion.
+                - Termine TOUJOYRS par une question ouverte ou une relance professionnelle pour poursuivre la discussion.
                 - Utilise un formatage Markdown propre (listes, mots importants en gras).
                 """
 
@@ -166,12 +167,11 @@ if question:
                 # Affichage direct de la réponse
                 st.markdown(f'<div class="chatgpt-text">{reponse}</div>', unsafe_allow_html=True)
                 
-                # Enregistrement dans la mémoire sans compte
+                # Enregistrement dans la mémoire
                 st.session_state.messages.append({"role": "assistant", "content": reponse})
                 
-                # Changement du texte de la barre de frappe pour le prochain tour
                 st.session_state.placeholder_actuel = random.choice(phrases_accueil)
-                st.rerun() # Force l'application à se rafraîchir pour stabiliser l'historique sur mobile
+                st.rerun()
                 
             except Exception as e:
                 st.error(f"Erreur : {str(e)}")
