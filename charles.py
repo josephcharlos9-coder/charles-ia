@@ -15,11 +15,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- CONFIGURATION DE L'IDENTITÉ ET DES AVATARS ---
-USER_NAME = "Charles Joseph" # Ton nom (utilisé en coulisses pour l'IA)
+# --- CONFIGURATION DE L'IDENTITÉ ---
+CREATOR_NAME = "Charles Joseph" # Toi, le seul et unique créateur
 AI_DISPLAY_NAME = "Charles IA"
 
-# Configuration des profils
+# Configuration des profils visuels
 URL_AVATAR_AI = "avatar.jpg"
 URL_AVATAR_USER = "user"
 
@@ -148,13 +148,12 @@ if len(st.session_state.messages) == 0:
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
             <img src="app/static/{URL_AVATAR_AI}" width="90" style="border-radius: 50%; margin-bottom: 1rem; border: 2px solid #424242; object-fit: cover; height: 90px;">
             <div style="font-size: 2.2rem; color: #ffffff; font-weight: bold; margin-bottom: 0.2rem;">{AI_DISPLAY_NAME}</div>
-            <p style="color: #8e8e93; font-size: 1rem;">Par {USER_NAME}</p>
+            <p style="color: #8e8e93; font-size: 1rem;">Par {CREATOR_NAME}</p>
         </div>
     """, unsafe_allow_html=True)
 
 # --- RENDU DE LA DISCUSSION ---
 for msg in st.session_state.messages:
-    # Changement ici : l'auteur affiché est "You" pour l'utilisateur
     author = "You" if msg["role"] == "user" else AI_DISPLAY_NAME
     avatar_img = URL_AVATAR_USER if msg["role"] == "user" else URL_AVATAR_AI
         
@@ -199,16 +198,20 @@ if question:
                 try:
                     client = Groq(api_key=GROQ_API_KEY)
                     
-                    system_instruction = f"""Tu es '{AI_DISPLAY_NAME}', un assistant virtuel de niveau expert, conçu par l'ingénieur {USER_NAME}.
+                    # CORRECTION DU COMPORTEMENT ICI : L'IA sait qui l'utilise et qui l'a créée
+                    system_instruction = f"""Tu es '{AI_DISPLAY_NAME}', un assistant virtuel intelligent et poli de niveau expert. 
+                    Tu as été conçu et programmé uniquement par l'ingénieur {CREATOR_NAME}.
                     
                     CONSIGNES STRICTES :
-                    - Si l'utilisateur te demande qui t'a créé ou qui t'a programmé, réponds fièrement que ton créateur est l'ingénieur Charles Joseph.
-                    - Rédige tes réponses en français, de manière claire, moderne et fluide.
-                    - À la toute fin de ta réponse, pose TOUJOURS une ou deux questions de suivi intelligentes pour relancer l'utilisateur.
-                    - Utilise un formatage Markdown standard avec du gras. Pas d'émojis superflus.
+                    1. Tu t'adresses à un utilisateur général (qui n'est pas forcément Charles). Ne l'appelle jamais par le nom de ton créateur.
+                    2. Si l'utilisateur te salue (ex: "Salut", "Bonjour", "Hey"), réponds poliment en te présentant ("Bonjour ! Je suis {AI_DISPLAY_NAME}, comment puis-je vous aider aujourd'hui ?").
+                    3. UNIQUEMENT si l'utilisateur te demande explicitement qui t'a créé, qui t'a programmé ou d'où tu viens, réponds fièrement que ton créateur est l'ingénieur {CREATOR_NAME}.
+                    4. Rédige tes réponses en français, de manière claire, moderne, naturelle et directe.
+                    5. À la toute fin de ta réponse, pose TOUJOURS une ou deux questions de suivi intelligentes pour relancer la discussion.
+                    6. Utilise un formatage Markdown standard avec du gras pour structurer. Pas d'émojis inutiles.
                     """
 
-                    prompt = f"Contexte de recherche :\n{context}\n\nQuestion de l'utilisateur ({USER_NAME}) :\n{question}"
+                    prompt = f"Contexte de recherche disponible :\n{context}\n\nQuestion de l'utilisateur anonyme :\n{question}"
 
                     chat_completion = client.chat.completions.create(
                         messages=[
