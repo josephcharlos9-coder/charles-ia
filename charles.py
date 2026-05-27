@@ -21,15 +21,13 @@ AI_DISPLAY_NAME = "Charles IA"
 
 # --- FONCTION DE VÉRIFICATION DE LA CONNEXION ---
 def verifier_connexion():
-    """Retourne True si internet fonctionne, False si la connexion est mauvaise ou coupée."""
     try:
-        # On tente de charger un site ultra-rapide avec un délai max de 3 secondes
         urllib.request.urlopen('https://www.google.com', timeout=3)
         return True
     except Exception:
         return False
 
-# --- STYLE CSS (INTERFACE CHATGPT MOBILE) ---
+# --- STYLE CSS (DUPLICATION CHATGPT MOBILE AVEC OPTIONS VOCALES) ---
 st.markdown(f"""
     <style>
     html, body, [data-testid="stAppViewContainer"] {{
@@ -45,7 +43,7 @@ st.markdown(f"""
     
     .block-container {{
         padding-top: 1rem !important;
-        padding-bottom: 6rem !important;
+        padding-bottom: 7rem !important;
         max_width: 500px !important;
     }}
     
@@ -70,6 +68,7 @@ st.markdown(f"""
         margin-top: 0px;
     }}
     
+    /* --- BARRE DE RECHERCHE TEXTE + VOCAL INCORPORÉ --- */
     [data-testid="stChatInput"] {{
         background-color: #2f2f2f !important;
         border-radius: 26px !important;
@@ -83,6 +82,17 @@ st.markdown(f"""
     [data-testid="stChatInput"] button {{
         background-color: #ffffff !important;
         border-radius: 50% !important;
+    }}
+    
+    /* Style pour la zone des faux boutons sous la barre */
+    .vocal-container {{
+        display: flex;
+        justify-content: space-between;
+        margin-top: -55px;
+        position: relative;
+        z-index: 99999;
+        padding: 0 15px;
+        pointer-events: none; /* Laisse le clic traverser vers les vrais composants invisibles si besoin */
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -101,8 +111,14 @@ phrases_accueil = [
 if "placeholder_actuel" not in st.session_state:
     st.session_state.placeholder_actuel = random.choice(phrases_accueil)
 
-# --- BOUTON POUR EFFACER LE CHAT ---
-col_logo, col_clear = st.columns([8, 2])
+# --- EN-TÊTE DE L'APPLICATION (BOUTON NETTOYAGE ET INTEGRATION VOCAL APPLI) ---
+col_logo, col_vocal, col_clear = st.columns([7, 1.5, 1.5])
+
+with col_vocal:
+    # Icône "Direct" / Appel tout en haut comme sur certaines versions de l'application
+    if st.button("📞", help="Lancer un appel direct"):
+        st.toast("ℹ️ Pour le moment, je ne suis pas disponible à parler.", icon="🔊")
+
 with col_clear:
     if st.button("🗑️", help="Nouvelle discussion"):
         st.session_state.messages = []
@@ -112,7 +128,7 @@ with col_clear:
 # --- ÉCRAN D'ACCUEIL INITIAL ---
 if len(st.session_state.messages) == 0:
     st.markdown(f"""
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 65vh; text-align: center;">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
             <div style="font-size: 2.2rem; color: #ffffff; font-weight: bold; margin-bottom: 0.2rem;">{AI_DISPLAY_NAME}</div>
             <p style="color: #8e8e93; font-size: 1rem;">Par {USER_NAME}</p>
         </div>
@@ -124,6 +140,13 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(f'<div class="message-author">{author}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="chat-text">{msg["content"]}</div>', unsafe_allow_html=True)
+
+# --- DEUX BOUTONS POUR SIMULER LE VOCAL DE L'IMAGE ---
+# On place un bouton juste au-dessus de la barre d'entrée pour capturer l'action du micro
+col_space, col_mic = st.columns([8.5, 1.5])
+with col_mic:
+    if st.button("🎙️", help="Activer le dictaphone vocal"):
+        st.toast("ℹ️ Pour le moment, je ne suis pas disponible à parler.", icon="🎙️")
 
 # --- ZONE DE SAISIE EN BAS ---
 question = st.chat_input(st.session_state.placeholder_actuel)
