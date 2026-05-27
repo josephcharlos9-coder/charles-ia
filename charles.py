@@ -16,12 +16,11 @@ st.set_page_config(
 )
 
 # --- CONFIGURATION DE L'IDENTITÉ ET DES AVATARS ---
-USER_NAME = "Charles Joseph"
+USER_NAME = "Charles Joseph" # Ton nom (utilisé en coulisses pour l'IA)
 AI_DISPLAY_NAME = "Charles IA"
 
-# Ta photo est attribuée UNIQUEMENT à l'IA
+# Configuration des profils
 URL_AVATAR_AI = "avatar.jpg"
-# Pour tes questions, on utilise l'icône utilisateur par défaut de Streamlit (ou laisse "user")
 URL_AVATAR_USER = "user"
 
 # --- FONCTION DE VÉRIFICATION DE LA CONNEXION ---
@@ -106,7 +105,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- INJECTION JAVASCRIPT POUR LE DEFILEMENT AUTOMATIQUE STABLE ---
+# --- INJECTION JAVASCRIPT POUR LE DEFILEMENT AUTOMATIQUE ---
 st.components.v1.html("""
     <script>
     function scrollToBottom() {
@@ -143,7 +142,7 @@ with col_clear:
         st.session_state.placeholder_actuel = random.choice(phrases_accueil)
         st.rerun()
 
-# --- ÉCRAN D'ACCUEIL AVEC TON LOGO LOCAL ---
+# --- ÉCRAN D'ACCUEIL ---
 if len(st.session_state.messages) == 0:
     st.markdown(f"""
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
@@ -155,7 +154,8 @@ if len(st.session_state.messages) == 0:
 
 # --- RENDU DE LA DISCUSSION ---
 for msg in st.session_state.messages:
-    author = USER_NAME if msg["role"] == "user" else AI_DISPLAY_NAME
+    # Changement ici : l'auteur affiché est "You" pour l'utilisateur
+    author = "You" if msg["role"] == "user" else AI_DISPLAY_NAME
     avatar_img = URL_AVATAR_USER if msg["role"] == "user" else URL_AVATAR_AI
         
     with st.chat_message(msg["role"], avatar=avatar_img):
@@ -175,10 +175,10 @@ if question:
     if not verifier_connexion():
         st.error("⚠️ Connexion réseau instable ou indisponible. Impossible de joindre Charles IA pour le moment. Veuillez réessayer.")
     else:
-        # 1. Enregistrement utilisateur (avec avatar standard "user")
+        # 1. Enregistrement utilisateur (Affichage "You")
         st.session_state.messages.append({"role": "user", "content": question})
         with st.chat_message("user", avatar=URL_AVATAR_USER):
-            st.markdown(f'<div class="message-author">{USER_NAME}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="message-author">You</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="chat-text">{question}</div>', unsafe_allow_html=True)
 
         # 2. Recherche discrète
@@ -191,7 +191,7 @@ if question:
         except Exception:
             pass
 
-        # 3. Génération IA (avec ton avatar.jpg)
+        # 3. Génération IA
         with st.chat_message("assistant", avatar=URL_AVATAR_AI):
             st.markdown(f'<div class="message-author">{AI_DISPLAY_NAME}</div>', unsafe_allow_html=True)
             
