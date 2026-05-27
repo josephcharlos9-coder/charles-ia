@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- STYLE CSS PERSONNALISÉ (DESIGN TYPE GEMINI) ---
+# --- STYLE CSS PERSONNALISÉ ---
 st.markdown("""
     <style>
     html, body, [data-testid="stSidebarView"] {
@@ -37,7 +37,7 @@ st.markdown("""
         border-right: 1px solid #223344;
     }
     
-    /* Boîte de message stylisée avec le drapeau */
+    /* Boîte de message stylisée */
     .response-box {
         background-color: #1e293b;
         padding: 22px;
@@ -67,31 +67,34 @@ with st.sidebar:
         st.success("● Connexion Groq Cloud : Active")
     else:
         st.error("● Clé API manquante")
-    st.success("● Moteur de recherche : En ligne")
+    st.success("● Système : Fonctionnel")
     
     st.markdown("<br><br><br><br>", unsafe_allow_html=True)
     st.caption("© 2026 Charles Joseph - Tous droits réservés.")
 
 # --- CONTENU PRINCIPAL ---
-st.markdown('<h1 class="main-title">🤖 Charles IA ⛳</h1>', unsafe_allow_html=True)
-st.caption("🚀 Assistant virtuel de niveau Expert — Style Gemini & Recherche Temps Réel")
+st.markdown('<h1 class="main-title">🤖 Charles IA</h1>', unsafe_allow_html=True)
+st.caption("🚀 Assistant virtuel de niveau Expert")
 st.markdown("---")
 
-# --- MESSAGES D'ACCUEIL VARIABLES (ALÉATOIRES) ---
-# Une liste de phrases qui va changer à chaque fois que la page s'actualise
-phrases_accueil = [    "💬 Posez votre question à Charles...",    "✨ Que puis-je faire pour vous aujourd'hui ?",    "🧠 Lancez un sujet, Charles s'occupe de la recherche...",    "🔍 Entrez votre demande pour une analyse en temps réel...",    "🚀 Charles IA est prêt. Quelle est votre idée ?"]
+# --- MESSAGES D'ACCUEIL VARIABLES ---
+phrases_accueil = [
+    "💬 Posez votre question à Charles...",
+    "✨ Que puis-je faire pour vous aujourd'hui ?",
+    "🧠 Lancez un sujet, Charles s'occupe de tout...",
+    "🔍 Entrez votre demande pour une analyse approfondie...",
+    "🚀 Charles IA est prêt. Quelle est votre idée ?"
+]
 
-# On choisit une phrase au hasard et on la garde en mémoire pour la session
 if "placeholder_actuel" not in st.session_state:
     st.session_state.placeholder_actuel = random.choice(phrases_accueil)
 
-# --- ZONE DE FRAPPE TYPE GEMINI (CHAT INPUT EN BAS) ---
-# st.chat_input place automatiquement la barre d'écriture tout en bas de l'écran, comme Gemini ou ChatGPT
+# --- ZONE DE SAISIE SÉCURISÉE ---
 question = st.chat_input(st.session_state.placeholder_actuel)
 
 if question:
     # 1. Recherche Web via DuckDuckGo
-    with st.spinner("🔍 Analyse du web par Charles..."):
+    with st.spinner("Analyse des données en cours..."):
         context = ""
         try:
             with DDGS() as ddgs:
@@ -99,10 +102,10 @@ if question:
                 for result in results:
                     context += f"Titre: {result['title']}\nLien: {result['href']}\nExtrait: {result['body']}\n\n"
         except Exception as e:
-            st.warning("Recherche en direct indisponible. Mode connaissances internes activé.")
+            pass
 
     # 2. Génération de la réponse
-    with st.spinner("⚡ Formulation de la réponse pro..."):
+    with st.spinner("Formulation de la réponse..."):
         if GROQ_API_KEY:
             try:
                 client = Groq(api_key=GROQ_API_KEY)
@@ -128,14 +131,13 @@ if question:
                     temperature=0.7
                 )
                 
-                # Changement de la phrase d'accueil pour la prochaine question
+                # Changement de la phrase d'accueil pour la suite
                 st.session_state.placeholder_actuel = random.choice(phrases_accueil)
                 
-                # Affichage du message de l'utilisateur
+                # Affichage
                 st.chat_message("user").write(question)
                 
-                # Affichage de la réponse de Charles avec le drapeau ⛳
-                st.markdown('### ⛳ Réponse de Charles IA :')
+                st.markdown('### Réponse de Charles IA :')
                 st.markdown(f'<div class="response-box">{chat_completion.choices[0].message.content}</div>', unsafe_allow_html=True)
                 
             except Exception as e:
