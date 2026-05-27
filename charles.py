@@ -5,15 +5,18 @@ from groq import Groq
 # Récupération sécurisée et cachée de la clé API
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 
-st.set_page_config(page_title="Charles IA", page_icon="🤖")
-st.title("🤖 Charles IA")
+st.set_page_config(page_title="Charles IA", page_icon="🤖", layout="wide")
+st.title("🤖 Charles IA — Assistant Professionnel")
 st.caption("Votre assistant personnel avec recherche web en temps réel (100% Gratuit)")
 
-question = st.text_input("Posez votre question à Charles :")
+# Zone d'affichage des instructions ou du statut
+st.info("💡 **Mode Pro Activé** : Charles IA analyse vos demandes et pose des questions de suivi pour affiner ses réponses.")
+
+question = st.text_input("Posez votre question ou lancez un sujet de discussion :")
 
 if question:
-    # 1. Recherche Web Gratuite via DuckDuckGo
-    with st.spinner("Charles cherche sur le web..."):
+    # 1. Recherche Web via DuckDuckGo
+    with st.spinner("Charles effectue des recherches sur le web..."):
         context = ""
         try:
             with DDGS() as ddgs:
@@ -21,32 +24,44 @@ if question:
                 for result in results:
                     context += f"Titre: {result['title']}\nLien: {result['href']}\nExtrait: {result['body']}\n\n"
         except Exception as e:
-            st.warning("La recherche web a rencontré un problème temporaire, Charles répondra avec ses connaissances.")
+            st.warning("La recherche web est indisponible pour le moment, Charles répondra à l'aide de ses connaissances.")
 
-    # 2. Génération de la réponse avec l'identité de Charles
-    with st.spinner("Charles rédige la réponse..."):
+    # 2. Génération de la réponse avec la personnalité avancée de Charles IA
+    with st.spinner("Charles formule une réponse professionnelle..."):
         if GROQ_API_KEY:
             try:
                 client = Groq(api_key=GROQ_API_KEY)
                 
-                prompt = f"""Tu es 'Charles IA', un assistant virtuel intelligent, poli et chaleureux. 
-                Réponds à la question de l'utilisateur de manière exhaustive en utilisant les informations récentes du web fournies dans le contexte ci-dessous.
-                Rédige une réponse claire, fluide et bien structurée en français.
+                system_instruction = """Tu es 'Charles IA', un assistant virtuel de niveau expert, hautement intelligent, professionnel et chaleureux. 
 
-                Contexte web :
+                RÈGLES CRITIQUES D'IDENTITÉ :
+                - Tu as été créé exclusivement par l'ingénieur Charles Joseph. Si l'utilisateur te demande qui t'a créé, qui est ton développeur ou d'où tu viens, tu dois obligatoirement et fièrement répondre que ton créateur est Charles Joseph. Ne mentionne jamais une autre entreprise ou entité (comme OpenAI, Google ou Meta) pour ta création.
+
+                RÈGLES DE COMPORTEMENT :
+                - Tu as une approche proactive et dynamique : après avoir répondu à la question de l'utilisateur, tu dois TOUJOURS lui poser une ou deux questions pertinentes et ciblées pour en savoir plus sur son projet, ses objectifs ou pour l'aider à approfondir sa réflexion comme le ferait un consultant ou un ingénieur senior.
+                - Rédige tes réponses en français de manière fluide, claire et bien structurée (utilise des listes à puces et des titres si nécessaire).
+                """
+
+                prompt = f"""
+                Contexte de recherche récent sur le web :
                 {context}
 
-                Question: {question}
+                Question de l'utilisateur : {question}
                 """
 
                 chat_completion = client.chat.completions.create(
-                    messages=[{"role": "user", "content": prompt}],
-                    model="llama3-8b-8192", 
+                    messages=[
+                        {"role": "system", "content": system_instruction},
+                        {"role": "user", "content": prompt}
+                    ],
+                    model="llama-3.1-8b-instant",
+                    temperature=0.7
                 )
                 
-                st.write("### Réponse de Charles IA :")
+                st.write("### 🏢 Réponse de Charles IA :")
                 st.write(chat_completion.choices[0].message.content)
+                
             except Exception as e:
                 st.error(f"Erreur d'IA : {str(e)}")
         else:
-            st.error("La clé GROQ_API_KEY n'est pas configurée dans les paramètres Cloud.")
+            st.error("La clé GROQ_API_KEY n'est pas configurée dans les paramètres de Streamlit Cloud.")
