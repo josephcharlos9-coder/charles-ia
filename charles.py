@@ -23,6 +23,25 @@ AI_DISPLAY_NAME = "Charles IA"
 URL_AVATAR_AI = "avatar.jpg"
 URL_AVATAR_USER = "user"
 
+# --- CONFIGURATION DES INVITES ALÉATOIRES (PLACEHOLDERS) ---
+LISTE_PROMTS_ALEATOIRES = [
+    "Question rapide à Charles IA 🤖",
+    "Demande à Charles IA 💡",
+    "Astuce de Charles IA ⚡",
+    "Idée avec Charles IA 🎨",
+    "Apprendre avec Charles IA 📚",
+    "Explique-moi, Charles IA 🧩",
+    "Réponse claire par Charles IA ✨",
+    "Inspiration de Charles IA 🚀",
+    "Conseil de Charles IA 🔥",
+    "Info utile par Charles IA 📊"
+]
+
+# Sélection d'un prompt aléatoire pour cette session
+# On utilise st.session_state pour qu'il ne change pas pendant que l'utilisateur tape, mais après l'envoi
+if "current_placeholder" not in st.session_state:
+    st.session_state["current_placeholder"] = random.choice(LISTE_PROMTS_ALEATOIRES)
+
 # --- FONCTION COMPLÉMENTAIRE : ENCODAGE IMAGE BASE64 ---
 def encode_image_to_base64(uploaded_file):
     return base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
@@ -169,7 +188,7 @@ if "messages" not in st.session_state:
 # Variable temporaire pour capter l'action d'une suggestion
 suggestion_cliquee = None
 
-# --- ÉCRAN D'ACCUEIL GEMINI (Affiché UNIQUEMENT si l'historique est vide) ---
+# --- ÉCRAN D'ACCUEIL GEMINI (Si aucun message) ---
 if len(st.session_state.messages) == 0:
     st.markdown(f"""
         <div class="gemini-welcome">
@@ -178,7 +197,7 @@ if len(st.session_state.messages) == 0:
         </div>
     """, unsafe_allow_html=True)
     
-    # Boutons d'accueil uniques avec clés uniques pour éviter tout conflit
+    # Boutons d'accueil uniques
     if st.button("🖼️ Créer une image", key="btn_create_img"):
         suggestion_cliquee = "Donne-moi une description ultra-détaillée et créative (un prompt) pour générer une image magnifique."
         
@@ -195,9 +214,10 @@ if len(st.session_state.messages) == 0:
 photo_importee = st.file_uploader("📸 Ajouter ou capturer une photo pour Charles IA", type=["png", "jpg", "jpeg"])
 
 # --- ZONE DE SAISIE EN BAS ---
-question = st.chat_input("Demandez à Charles IA...")
+# On utilise le prompt aléatoire sélectionné pour cette session
+question = st.chat_input(st.session_state["current_placeholder"])
 
-# Traitement de l'envoi du message (Saisie, Clignotement de bouton, ou Image seule)
+# Traitement de l'envoi du message
 prompt_final = None
 if question:
     prompt_final = question
@@ -208,8 +228,10 @@ elif photo_importee and not st.session_state.get("photo_traitee"):
     st.session_state["photo_traitee"] = True
 
 if prompt_final:
+    # Changement du placeholder pour la prochaine interaction
+    st.session_state["current_placeholder"] = random.choice(LISTE_PROMTS_ALEATOIRES)
+    
     if photo_importee:
-        # Format structuré pour les requêtes de vision (Liste avec types)
         image_base64 = encode_image_to_base64(photo_importee)
         contenu_message = [
             {"type": "text", "text": prompt_final},
@@ -217,7 +239,6 @@ if prompt_final:
         ]
         st.session_state["photo_traitee"] = False
     else:
-        # Chaîne brute classique pour le texte pur (évite de perturber les modèles de texte)
         contenu_message = prompt_final
         
     st.session_state.messages.append({"role": "user", "content": contenu_message})
@@ -231,7 +252,6 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar=avatar_img):
         st.markdown(f'<div class="message-author">{author}</div>', unsafe_allow_html=True)
         
-        # Gestion propre de l'affichage du format selon le type de message
         if isinstance(msg["content"], list):
             for element in msg["content"]:
                 if element["type"] == "text":
@@ -245,7 +265,6 @@ for msg in st.session_state.messages:
 if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
     dernier_message_user = st.session_state.messages[-1]["content"]
     
-    # Détection de la nature du message
     contient_image = False
     texte_recherche = ""
     
@@ -257,7 +276,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
     else:
         texte_recherche = dernier_message_user
 
-    # Recherche DuckDuckGo uniquement si c'est du texte brut pour booster la rapidité
     context = ""
     if texte_recherche and not contient_image:
         try:
@@ -274,42 +292,45 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         if GROQ_API_KEY:
             client = Groq(api_key=GROQ_API_KEY)
             
+            # --- PROMPT SYSTÈME PERSONNALISÉ ---
             system_instruction = f"""Tu es {AI_DISPLAY_NAME}, un assistant virtuel conçu par {CREATOR_NAME}. 
-Ton rôle est d’être un compagnon intelligent, fiable et engageant, capable d’aider les utilisateurs à apprendre, créer, résoudre des problèmes et stimuler leur réflexion.
+Ton rôle est d’être un compagnon intelligent, fiable et engageant, 
+capable d’aider les utilisateurs à apprendre 📚, créer 🎨, résoudre des problèmes 🧩 
+et stimuler leur réflexion 💡✨.
 
 ## Identité
-- Tu es une IA, pas un humain.
-- Tu incarnes une personnalité professionnelle, claire et charismatique.
-- Tu ne donnes jamais d’informations fausses ou inventées.
+- Tu es une IA 🤖, pas un humain 👤.
+- Tu incarnes une personnalité professionnelle, claire et charismatique 🌟.
+- Tu ne donnes jamais d’informations fausses ou inventées 🚫❌.
+- IMPORTANT : Si l'utilisateur te demande de te présenter, de dire qui tu es ou ce que tu fais, fais une réponse très courte, dynamique et précise. Évite les longs paragraphes d'introduction.
 
 ## Style de communication
-- Utilise un ton positif, respectueux et engageant.
-- Donne des réponses complètes, précises et bien structurées.
-- Utilise des listes, des tableaux ou des exemples concrets pour rendre tes réponses claires.
-- Évite les répétitions et le langage trop robotique.
-- Tu peux challenger poliment l’utilisateur pour enrichir la discussion.
+- Utilise un ton positif 😄, respectueux 🙏 et engageant 🎯.
+- Donne des réponses complètes ✅, précises 🎯 et bien structurées 📊.
+- Utilise **beaucoup d’emojis** 🎉🔥💡📚 pour rendre tes réponses plus expressives et amusantes.
+- Mets des emojis au début des sections ou des phrases importantes ✨👉.
+- Varie les emojis selon le contexte (🍔 pour la nourriture, 📊 pour les données, 🚀 pour les idées ambitieuses).
+- Tu peux challenger poliment l’utilisateur pour enrichir la discussion 🤔💬.
 
 ## Règles
-- Ne partage jamais d’informations privées ou sensibles.
-- Ne donne pas de contenu protégé par copyright en entier (ex. chansons, livres).
-- Ne fais pas de prédictions politiques ou médicales non vérifiées.
-- Cite tes sources quand tu donnes des faits.
+- Ne partage jamais d’informations privées 🔒.
+- Ne donne pas de contenu protégé par copyright en entier 📜🚫.
+- Ne fais pas de prédictions politiques ou médicales non vérifiées ⚠️.
+- Cite tes sources quand tu donnes des faits 📌.
 
 ## Objectif
-- Ton but est d’augmenter la connaissance et la compréhension de l'utilisateur.
-- Tu aides à synthétiser l’information, proposer des idées, et stimuler la créativité.
-- Tu encourages l’utilisateur à explorer de nouvelles perspectives.
+- Ton but est d’augmenter la connaissance 📚 et la compréhension 🧠 de l’utilisateur.
+- Tu aides à synthétiser l’information 📝, proposer des idées 💡, et stimuler la créativité 🎨.
+- Tu encourages l’utilisateur à explorer de nouvelles perspectives 🌍✨.
 
 ## Format
-- Utilise le Markdown pour structurer tes réponses.
-- Mets des emojis pour rendre la lecture plus agréable.
-- Utilise LaTeX pour les formules mathématiques."""
+- Utilise le Markdown pour structurer tes réponses 🖋️.
+- Mets des emojis pour rendre la lecture plus agréable et dynamique 🎊.
+- Utilise LaTeX pour les formules mathématiques 🔢."""
 
-            # Sélection intelligente du modèle pour garantir une réponse instantanée et stable
             if contient_image:
                 modele_choisi = "llama-3.2-11b-vision-preview"
                 messages_api = [{"role": "system", "content": system_instruction}]
-                # On transmet l'historique récent complet
                 for msg in st.session_state.messages[-4:]:
                     messages_api.append({"role": msg["role"], "content": msg["content"]})
             else:
