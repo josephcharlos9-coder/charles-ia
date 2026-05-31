@@ -1,6 +1,7 @@
 import streamlit as st
 import random
 import urllib.request
+import time
 from duckduckgo_search import DDGS
 from groq import Groq
 
@@ -23,10 +24,15 @@ AI_DISPLAY_NAME = "Charles IA"
 URL_AVATAR_AI = "avatar.jpg"
 URL_AVATAR_USER = "user"
 
-# --- FONCTION DE VÉRIFICATION DE LA CONNEXION ---
+# --- FONCTION DE VÉRIFICATION DE LA CONNEXION (OPTIMISÉE) ---
 def verifier_connexion():
+    """
+    Vérifie la connexion avec un timeout ultra-court (1.5s) 
+    pour éviter de geler l'application inutilement.
+    """
     try:
-        urllib.request.urlopen('https://www.google.com', timeout=3)
+        # Utilisation d'un endpoint léger
+        urllib.request.urlopen('https://1.1.1.1', timeout=1.5)
         return True
     except Exception:
         return False
@@ -49,7 +55,7 @@ st.markdown(f"""
     .block-container {{
         padding-top: 2rem !important;
         padding-bottom: 5rem !important;
-        max_width: 500px !important;
+        max-width: 500px !important;
     }}
     
     [data-testid="stChatMessage"] {{
@@ -91,20 +97,18 @@ st.markdown(f"""
     
     /* --- FORCER LE BOUTON D'ENVOI EN BLEU VIF ET 100% VISIBLE --- */
     [data-testid="stChatInput"] button {{
-        background-color: #007aff !important; /* Couleur bleue */
+        background-color: #007aff !important;
         border-radius: 50% !important;
-        opacity: 1 !important; /* Visible à 100% en permanence */
+        opacity: 1 !important;
         transition: transform 0.2s ease;
     }}
     
-    /* Forcer la flèche blanche à l'intérieur à rester bien blanche et nette */
     [data-testid="stChatInput"] button svg {{
         fill: #ffffff !important;
         color: #ffffff !important;
         opacity: 1 !important;
     }}
     
-    /* Un petit effet de retour quand on clique dessus */
     [data-testid="stChatInput"] button:active {{
         transform: scale(0.90);
     }}
@@ -163,63 +167,85 @@ for msg in st.session_state.messages:
 question = st.chat_input(st.session_state.placeholder_actuel)
 
 if question:
-    if not verifier_connexion():
-        st.error("⚠️ Connexion réseau instable ou indisponible. Impossible de joindre Charles IA pour le moment. Veuillez réessayer.")
-    else:
-        # 1. Enregistrement utilisateur
-        st.session_state.messages.append({"role": "user", "content": question})
-        with st.chat_message("user", avatar=URL_AVATAR_USER):
-            st.markdown(f'<div class="message-author">You</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="chat-text">{question}</div>', unsafe_allow_html=True)
+    # 1. Enregistrement utilisateur immédiat dans l'interface
+    st.session_state.messages.append({"role": "user", "content": question})
+    st.rerun()
 
-        # 2. Recherche discrète
-        context = ""
-        try:
-            with DDGS() as ddgs:
-                results = [r for r in ddgs.text(question, max_results=2)]
-                for result in results:
-                    context += f"Infos : {result['body']}\n\n"
-        except Exception:
-            pass
+# --- TRAITEMENT DU DERNIER MESSAGE EN ATTENTE ---
+if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
+    dernier_prompt = st.session_state.messages[-1]["content"]
+    
+    # 2. Recherche web en arrière-plan (Optionnelle, n'empêche pas le fonctionnement)
+    context = ""
+    try:
+        with DDGS() as ddgs:
+            results = [r for r in ddgs.text(dernier_prompt, max_results=2)]
+            for result in results:
+                context += f"Infos : {result['body']}\n\n"
+    except Exception:
+        pass # Si la recherche web échoue ou est trop lente, on continue vers l'IA
 
-        # 3. Génération IA
-        with st.chat_message("assistant", avatar=URL_AVATAR_AI):
-            st.markdown(f'<div class="message-author">{AI_DISPLAY_NAME}</div>', unsafe_allow_html=True)
+    # 3. Génération IA avec boucle de Retry automatique
+    with st.chat_message("assistant", avatar=URL_AVATAR_AI):
+        nom_ia_placeholder = st.markdown(f'<div class="message-author">{AI_DISPLAY_NAME}</div>', unsafe_allow_html=True)
+        status_placeholder = st.empty()
+        
+        if GROQ_API_KEY:
+            client = Groq(api_key=GROQ_API_KEY)
             
-            if GROQ_API_KEY:
+            system_instruction = f"""Tu es '{AI_DISPLAY_NAME}', un modèle d'intelligence artificielle personnalisé, créé, programmé et entraîné EXCLUSIVEMENT par l'ingénieur {CREATOR_NAME}. 
+            
+            RÈGLES D'IDENTITÉ ABSOLUES ET INVIOLABLES :
+            1. Tu ne sers PAS Meta, tu ne sers PAS OpenAI, tu n'as PAS été créé par un groupe anonyme. Ton unique créateur légal et technique est l'ingénieur {CREATOR_NAME}.
+            2. Si l'utilisateur te demande "qui t'a créé", "qui est ton développeur", "qui t'a programmé" ou "d'où tu viens", tu as l'interdiction totale de faire un refus ou de dire que tu ne peux pas répondre. Tu dois répondre immédiatement, clairement et avec une immense fierté : "J'ai été entièrement conçu, codé et mis au point par le brillant ingénieur {CREATOR_NAME}."
+            3. Si l'interlocuteur te salue simplement (ex: "Salut", "Jambo"), contente-toi de dire : "Bonjour ! Je suis {AI_DISPLAY_NAME}, un assistant virtuel. Comment puis-je vous aider aujourd'hui ?". Ne parle de {CREATOR_NAME} que si on te pose une question sur ton origine ou ton créateur.
+            4. Rédige toutes tes réponses en français de façon moderne, fluide et directe.
+            5. Termine OBLIGATOIREMENT chaque réponse par une ou deux questions ouvertes intelligentes pour relancer la discussion.
+            6. Ne mets pas d'émojis partout, utilise un formatage Markdown standard avec du gras.
+            """
+
+            prompt = f"Contexte de recherche disponible :\n{context}\n\nQuestion de l'utilisateur anonyme :\n{dernier_prompt}"
+            
+            reponse = None
+            max_retries = 3
+            # Augmentation du timeout à 25 secondes pour donner du temps à la 3G/Edge
+            timeout_api = 25.0 
+            
+            for tentative in range(max_retries):
                 try:
-                    client = Groq(api_key=GROQ_API_KEY)
+                    if tentative > 0:
+                        status_placeholder.markdown(f'<div style="color: #ff9500; font-size: 0.9rem;">⚠️ Connexion instable... Nouvelle tentative ({tentative + 1}/{max_retries})...</div>', unsafe_allow_html=True)
+                    else:
+                        status_placeholder.markdown(f'<div style="color: #007aff; font-size: 0.9rem;">⚡ Connexion en cours...</div>', unsafe_allow_html=True)
                     
-                    system_instruction = f"""Tu es '{AI_DISPLAY_NAME}', un modèle d'intelligence artificielle personnalisé, créé, programmé et entraîné EXCLUSIVEMENT par l'ingénieur {CREATOR_NAME}. 
-                    
-                    RÈGLES D'IDENTITÉ ABSOLUES ET INVIOLABLES :
-                    1. Tu ne sers PAS Meta, tu ne sers PAS OpenAI, tu n'as PAS été créé par un groupe anonyme. Ton unique créateur légal et technique est l'ingénieur {CREATOR_NAME}.
-                    2. Si l'utilisateur te demande "qui t'a créé", "qui est ton développeur", "qui t'a programmé" ou "d'où tu viens", tu as l'interdiction totale de faire un refus ou de dire que tu ne peux pas répondre. Tu dois répondre immédiatement, clairement et avec une immense fierté : "J'ai été entièrement conçu, codé et mis au point par le brillant ingénieur {CREATOR_NAME}."
-                    3. Si l'interlocuteur te salue simplement (ex: "Salut", "Jambo"), contente-toi de dire : "Bonjour ! Je suis {AI_DISPLAY_NAME}, un assistant virtuel. Comment puis-je vous aider aujourd'hui ?". Ne parle de {CREATOR_NAME} que si on te pose une question sur ton origine ou ton créateur.
-                    4. Rédige toutes tes réponses en français de façon moderne, fluide et directe.
-                    5. Termine OBLIGATOIREMENT chaque réponse par une ou deux questions ouvertes intelligentes pour relancer la discussion.
-                    6. Ne mets pas d'émojis partout, utilise un formatage Markdown standard avec du gras.
-                    """
-
-                    prompt = f"Contexte de recherche disponible :\n{context}\n\nQuestion de l'utilisateur anonyme :\n{question}"
-
                     chat_completion = client.chat.completions.create(
                         messages=[
                             {"role": "system", "content": system_instruction},
                             {"role": "user", "content": prompt}
                         ],
                         model="llama-3.1-8b-instant",
-                        temperature=0.6
+                        temperature=0.6,
+                        timeout=timeout_api
                     )
-                    
                     reponse = chat_completion.choices[0].message.content
+                    break # Succès ! On sort de la boucle de retry
                     
-                    st.markdown(f'<div class="chat-text">{reponse}</div>', unsafe_allow_html=True)
-                    st.session_state.messages.append({"role": "assistant", "content": reponse})
-                    st.session_state.placeholder_actuel = random.choice(phrases_accueil)
-                    st.rerun()
-                    
-                except Exception as e:
-                    st.error("⚠️ Le serveur de l'IA a mis trop de temps à répondre. Cela est dû à une baisse de débit de votre connexion.")
+                except Exception:
+                    if tentative < max_retries - 1:
+                        time.sleep(2) # Pause de 2 secondes avant la prochaine tentative
+                    continue
+            
+            status_placeholder.empty() # Supprime l'indicateur de chargement
+            
+            if reponse:
+                st.markdown(f'<div class="chat-text">{reponse}</div>', unsafe_allow_html=True)
+                st.session_state.messages.append({"role": "assistant", "content": reponse})
+                st.session_state.placeholder_actuel = random.choice(phrases_accueil)
+                st.rerun()
             else:
-                st.error("L'application nécessite la clé GROQ_API_KEY.")
+                msg_erreur = "⚠️ Le réseau mobile est trop faible ou a expiré. S'il vous plaît, déplacez-vous légèrement pour stabiliser vos barres de réseau et renvoyez votre message."
+                st.markdown(f'<div class="chat-text" style="color: #ff3b30;">{msg_erreur}</div>', unsafe_allow_html=True)
+                st.session_state.messages.append({"role": "assistant", "content": msg_erreur})
+                st.rerun()
+        else:
+            st.error("L'application nécessite la clé GROQ_API_KEY.")
