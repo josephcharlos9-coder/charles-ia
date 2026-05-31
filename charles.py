@@ -160,7 +160,7 @@ if "messages" not in st.session_state:
 if len(st.session_state.messages) == 0:
     st.markdown(f"""
         <div class="gemini-welcome">
-            <div class="gemini-greeting">Bonjour Hadassah</div>
+            <div class="gemini-greeting">Bonjour Je suis charles IA</div>
             <div class="gemini-subtitle">Par où commencer ?</div>
         </div>
         
