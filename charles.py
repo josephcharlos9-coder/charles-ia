@@ -47,13 +47,13 @@ st.markdown(f"""
     
     /* Style de la zone d'accueil Gemini */
     .gemini-welcome {{
-        margin-top: 15vh;
+        margin-top: 12vh;
         margin-bottom: 2rem;
         padding: 0 10px;
     }}
     
     .gemini-greeting {{
-        font-size: 2.4rem;
+        font-size: 2.3rem;
         font-weight: 500;
         background: linear-gradient(90deg, #4285f4, #9b51e0);
         -webkit-background-clip: text;
@@ -62,34 +62,39 @@ st.markdown(f"""
     }}
     
     .gemini-subtitle {{
-        font-size: 2.4rem;
+        font-size: 2.3rem;
         font-weight: 500;
         color: #c4c7c5;
         margin-bottom: 2rem;
     }}
     
-    /* Boutons de suggestions (Badges) */
-    .suggestion-container {{
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        width: 100%;
-        padding: 0 10px;
-        margin-bottom: 4rem;
+    /* Repositionnement et design des boutons-badges de Streamlit */
+    div[data-testid="stVerticalBlock"] > div {{
+        background-color: transparent !important;
     }}
     
-    .suggestion-badge {{
-        background-color: #ffffff;
-        padding: 14px 20px;
-        border-radius: 16px;
-        font-size: 1rem;
-        color: #1f1f1f;
-        border: 1px solid #e3e3e3;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        cursor: pointer;
+    .stButton > button {{
+        background-color: #ffffff !important;
+        padding: 14px 20px !important;
+        border-radius: 16px !important;
+        font-size: 1rem !important;
+        color: #1f1f1f !important;
+        border: 1px solid #e3e3e3 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+        width: 100% !important;
+        text-align: left !important;
+        display: flex !important;
+        align-items: center !important;
+        transition: background-color 0.2s ease, transform 0.1s ease !important;
+    }}
+    
+    .stButton > button:hover {{
+        background-color: #f1f3f4 !important;
+        border-color: #d2d2d2 !important;
+    }}
+    
+    .stButton > button:active {{
+        transform: scale(0.98) !important;
     }}
     
     /* Zone des messages de discussion */
@@ -156,21 +161,44 @@ st.components.v1.html("""
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Variable temporaire pour capter l'action d'une suggestion
+suggestion_cliquee = None
+
 # --- ÉCRAN D'ACCUEIL GEMINI (Si aucun message) ---
 if len(st.session_state.messages) == 0:
     st.markdown(f"""
         <div class="gemini-welcome">
-            <div class="gemini-greeting">Bonjour Hadassah</div>
+            <div class="gemini-greeting">Bonjour, je suis {AI_DISPLAY_NAME}</div>
             <div class="gemini-subtitle">Par où commencer ?</div>
         </div>
-        
-        <div class="suggestion-container">
-            <div class="suggestion-badge">🖼️ Créer une image</div>
-            <div class="suggestion-badge">🎸 Créer de la musique</div>
-            <div class="suggestion-badge">📄 Rédiger</div>
-            <div class="suggestion-badge">✨ Donne du peps à ma journée</div>
-        </div>
     """, unsafe_allow_html=True)
+    
+    # Création des actions réelles derrière chaque bouton
+    if st.button("🖼️ Créer une image"):
+        suggestion_cliquee = "Aide-moi à imaginer et décrire une image créative."
+        
+    if st.button("🎸 Créer de la musique"):
+        suggestion_cliquee = "Donne-moi des idées ou des paroles pour composer une musique originale."
+        
+    if st.button("📄 Rédiger"):
+        suggestion_cliquee = "Aide-moi à rédiger un texte ou un article bien structuré."
+        
+    if st.button("✨ Donne du peps à ma journée"):
+        suggestion_cliquee = "Donne-moi une bonne dose de motivation, une citation inspirante ou un défi stimulant pour ma journée !"
+
+# --- ZONE DE SAISIE EN BAS ---
+question = st.chat_input("Demandez à Charles IA...")
+
+# Si l'utilisateur clique sur une suggestion ou tape un texte
+prompt_final = None
+if question:
+    prompt_final = question
+elif suggestion_cliquee:
+    prompt_final = suggestion_cliquee
+
+if prompt_final:
+    st.session_state.messages.append({"role": "user", "content": prompt_final})
+    st.rerun()
 
 # --- RENDU DE LA DISCUSSION ---
 for msg in st.session_state.messages:
@@ -180,13 +208,6 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar=avatar_img):
         st.markdown(f'<div class="message-author">{author}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="chat-text">{msg["content"]}</div>', unsafe_allow_html=True)
-
-# --- ZONE DE SAISIE EN BAS ---
-question = st.chat_input("Demandez à Charles IA...")
-
-if question:
-    st.session_state.messages.append({"role": "user", "content": question})
-    st.rerun()
 
 # --- TRAITEMENT DE LA RÉPONSE IA ---
 if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] == "user":
@@ -207,7 +228,6 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         if GROQ_API_KEY:
             client = Groq(api_key=GROQ_API_KEY)
             
-            # --- INTÉGRATION DE TON PROMPT DE PERSONNALISATION ---
             system_instruction = f"""Tu es {AI_DISPLAY_NAME}, un assistant virtuel conçu par {CREATOR_NAME}. 
 Ton rôle est d’être un compagnon intelligent, fiable et engageant, capable d’aider les utilisateurs à apprendre, créer, résoudre des problèmes et stimuler leur réflexion.
 
@@ -244,8 +264,8 @@ Ton rôle est d’être un compagnon intelligent, fiable et engageant, capable d
             
             for tentative in range(3):
                 try:
-                    status_placeholder.markdown('<div style="color: #4285f4; font-size: 0.95rem;">🤖 Charles IA réfléchit...</div>', unsafe_allow_html=True)
-                    chat_completion = client.chat.and_more = client.chat.completions.create(
+                    status_placeholder.markdown(f'<div style="color: #4285f4; font-size: 0.95rem;">🤖 {AI_DISPLAY_NAME} réfléchit...</div>', unsafe_allow_html=True)
+                    chat_completion = client.chat.completions.create(
                         messages=[
                             {"role": "system", "content": system_instruction},
                             {"role": "user", "content": prompt}
