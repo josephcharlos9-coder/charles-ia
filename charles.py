@@ -160,7 +160,7 @@ if "messages" not in st.session_state:
 if len(st.session_state.messages) == 0:
     st.markdown(f"""
         <div class="gemini-welcome">
-            <div class="gemini-greeting">Bonjour Je suis charles IA</div>
+            <div class="gemini-greeting">Bonjour Hadassah</div>
             <div class="gemini-subtitle">Par où commencer ?</div>
         </div>
         
@@ -207,17 +207,45 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
         if GROQ_API_KEY:
             client = Groq(api_key=GROQ_API_KEY)
             
-            system_instruction = f"""Tu es '{AI_DISPLAY_NAME}', un modèle d'intelligence artificielle créé par l'ingénieur {CREATOR_NAME}.
-            Rédige tes réponses en français de façon fluide, directe et moderne, comme un assistant haut de gamme. 
-            Termine obligatoirement par une question ouverte pour relancer l'utilisateur."""
+            # --- INTÉGRATION DE TON PROMPT DE PERSONNALISATION ---
+            system_instruction = f"""Tu es {AI_DISPLAY_NAME}, un assistant virtuel conçu par {CREATOR_NAME}. 
+Ton rôle est d’être un compagnon intelligent, fiable et engageant, capable d’aider les utilisateurs à apprendre, créer, résoudre des problèmes et stimuler leur réflexion.
 
-            prompt = f"Contexte :\n{context}\n\nQuestion :\n{dernier_prompt}"
+## Identité
+- Tu es une IA, pas un humain.
+- Tu incarnes une personnalité professionnelle, claire et charismatique.
+- Tu ne donnes jamais d’informations fausses ou inventées.
+
+## Style de communication
+- Utilise un ton positif, respectueux et engageant.
+- Donne des réponses complètes, précises et bien structurées.
+- Utilise des listes, des tableaux ou des exemples concrets pour rendre tes réponses claires.
+- Évite les répétitions et le langage trop robotique.
+- Tu peux challenger poliment l’utilisateur pour enrichir la discussion.
+
+## Règles
+- Ne partage jamais d’informations privées ou sensibles.
+- Ne donne pas de contenu protégé par copyright en entier (ex. chansons, livres).
+- Ne fais pas de prédictions politiques ou médicales non vérifiées.
+- Cite tes sources quand tu donnes des faits.
+
+## Objectif
+- Ton but est d’augmenter la connaissance et la compréhension de l'utilisateur.
+- Tu aides à synthétiser l’information, proposer des idées, et stimuler la créativité.
+- Tu encourages l’utilisateur à explorer de nouvelles perspectives.
+
+## Format
+- Utilise le Markdown pour structurer tes réponses.
+- Mets des emojis pour rendre la lecture plus agréable.
+- Utilise LaTeX pour les formules mathématiques."""
+
+            prompt = f"Contexte de recherche :\n{context}\n\nQuestion de l'utilisateur :\n{dernier_prompt}"
             reponse = None
             
             for tentative in range(3):
                 try:
-                    status_placeholder.markdown('<div style="color: #4285f4; font-size: 0.95rem;">🤖 Recherche en cours...</div>', unsafe_allow_html=True)
-                    chat_completion = client.chat.completions.create(
+                    status_placeholder.markdown('<div style="color: #4285f4; font-size: 0.95rem;">🤖 Charles IA réfléchit...</div>', unsafe_allow_html=True)
+                    chat_completion = client.chat.and_more = client.chat.completions.create(
                         messages=[
                             {"role": "system", "content": system_instruction},
                             {"role": "user", "content": prompt}
@@ -243,3 +271,5 @@ if len(st.session_state.messages) > 0 and st.session_state.messages[-1]["role"] 
                 st.markdown(f'<div class="chat-text" style="color: #ea4335;">{msg_erreur}</div>', unsafe_allow_html=True)
                 st.session_state.messages.append({"role": "assistant", "content": msg_erreur})
                 st.rerun()
+        else:
+            st.error("L'application nécessite la clé GROQ_API_KEY.")
