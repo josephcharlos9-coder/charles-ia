@@ -48,7 +48,7 @@ def encode_image_to_base64(uploaded_file):
 st.markdown(f"""
     <style>
     html, body, [data-testid="stAppViewContainer"] {{
-        background-color: #f8fafd !important;
+        background-color: black !important;
         color: #1f1f1f !important;
         font-family: "Google Sans", sans-serif;
     }}
