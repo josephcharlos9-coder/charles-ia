@@ -164,7 +164,7 @@ st.markdown(f"""
     /* Force le fond sombre et le texte blanc dans la zone de texte (PC et Mobile) */
     [data-testid="stChatInput"] textarea {{
         background-color: transparent !important;
-        color: #a0aec0 !important;
+        color: #0a0a0a !important;
         -webkit-text-fill-color: #a0aec0 !important;
     }}
 
