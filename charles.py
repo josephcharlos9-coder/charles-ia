@@ -171,7 +171,7 @@ with st.sidebar:
     st.markdown("<div style='position: fixed; bottom: 20px; width: 220px; border-top: 1px solid #202123; padding-top: 10px;'></div>", unsafe_allow_html=True)
     
     if st.button("⚙️ Paramètres de l'application", key="btn_settings"):
-        st.info(f"Modèle actuel : **Llama3-8b (Optimisé anti-blocage)**. Créateur officiel : **{CREATOR_NAME}**.")
+        st.info(f"Modèle actuel : **Llama-3.1-8b-instant**. Créateur officiel : **{CREATOR_NAME}**.")
     
     if st.button("❓ Aide & Support", key="btn_help"):
         st.markdown(f"""
@@ -213,8 +213,8 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
 
             texte_recherche = st.session_state.messages[-1]["content"]
             
-            # Utilisation du modèle 8B pour éviter l'erreur de limite de quota (Rate Limit 429)
-            model = "llama3-8b-8192"
+            # Nouveau modèle Groq à jour et ultra-rapide
+            model = "llama-3.1-8b-instant"
 
             # Recherche web
             context = ""
@@ -251,7 +251,7 @@ Format
 Utilise le Markdown pour structurer tes réponses 🖋️.
 Utilise LaTeX pour les formules mathématiques 🔢."""
 
-            # Historique limité aux 3 derniers messages pour réduire la consommation de tokens
+            # Historique limité pour maximiser l'économie des tokens
             messages_api = [{"role": "system", "content": system_instruction}]
             for msg in st.session_state.messages[-3:-1]:
                 messages_api.append({"role": msg["role"], "content": msg["content"]})
