@@ -181,7 +181,7 @@ def encode_image_to_base64(uploaded_file):
 
 # --- ZONE CENTRALE D'ACCUEIL ---
 if len(st.session_state.messages) == 0:
-    st.markdown(f'<div class="chatgpt-welcome">Sur quoi travaillez-vous ?</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="chatgpt-welcome">Bonjour je suis Charles IA Sur quoi travaillez-vous ?</div>', unsafe_allow_html=True)
 
 # Gestion de l'importation de fichiers en bas ou au milieu
 photo_importee = st.file_uploader("📸 Joindre une image au chat", type=["png", "jpg", "jpeg"])
