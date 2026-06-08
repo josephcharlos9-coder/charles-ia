@@ -94,20 +94,20 @@ st.markdown("""
     
     /* Case de saisie flottante (Input) style ChatGPT */
     [data-testid="stChatInput"] {
-        background-color: #212121 !important;
+        background-color: #000000 !important;
         border-radius: 24px !important;
         border: 1px solid #303030 !important;
         padding: 4px 8px !important;
     }
     
     [data-testid="stChatInput"] textarea {
-        color: #ffffff !important;
+        color: #000000 !important;
         background-color: transparent !important;
         -webkit-text-fill-color: #ffffff !important;
     }
     
     [data-testid="stChatInput"] textarea::placeholder {
-        color: #8e8e93 !important;
+        color: #0a0a0a !important;
         -webkit-text-fill-color: #8e8e93 !important;
     }
     
