@@ -111,7 +111,7 @@ st.markdown("""
         -webkit-text-fill-color: #8e8e93 !important;
     }
     
-    /* STYLE DES BOUTONS DE LA SIDEBAR (Nouveau Look ChatGPT) */
+    /* STYLE DES BOUTONS DE LA SIDEBAR (Look ChatGPT) */
     div[data-testid="stSidebar"] .stButton > button {
         background-color: transparent !important;
         border: none !important;
@@ -171,7 +171,7 @@ with st.sidebar:
     st.markdown("<div style='position: fixed; bottom: 20px; width: 220px; border-top: 1px solid #202123; padding-top: 10px;'></div>", unsafe_allow_html=True)
     
     if st.button("⚙️ Paramètres de l'application", key="btn_settings"):
-        st.info(f"Modèle actuel : **Llama-3.3-70b**. Créateur officiel : **{CREATOR_NAME}**.")
+        st.info(f"Modèle actuel : **Llama3-8b (Optimisé anti-blocage)**. Créateur officiel : **{CREATOR_NAME}**.")
     
     if st.button("❓ Aide & Support", key="btn_help"):
         st.markdown(f"""
@@ -212,7 +212,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             }
 
             texte_recherche = st.session_state.messages[-1]["content"]
-            model = "llama-3.3-70b-versatile"
+            
+            # Utilisation du modèle 8B pour éviter l'erreur de limite de quota (Rate Limit 429)
+            model = "llama3-8b-8192"
 
             # Recherche web
             context = ""
@@ -230,7 +232,7 @@ Ton rôle est d’être un compagnon intelligent, fiable et engageant.
 Identité
 Tu es une IA 🤖, pas un humain 👤.
 Tu incarnes une personnalité professionnelle, claire et charismatique 🌟.
-Tu as été créé EXCLUSIVEMENT par {CREATOR_NAME}.
+Tu avez été créé EXCLUSIVEMENT par {CREATOR_NAME}.
 IMPORTANT - À PROPOS DE TON CRÉATEUR : Si un utilisateur t'interroge sur {CREATOR_NAME}, voici ses informations réelles à utiliser de manière naturelle, fière et polie : Il s'appelle {CREATOR_NAME}.
 Il est né et a grandi à Bukavu 🌍.
 Il a 19 ans 🎂.
@@ -249,9 +251,9 @@ Format
 Utilise le Markdown pour structurer tes réponses 🖋️.
 Utilise LaTeX pour les formules mathématiques 🔢."""
 
-            # Préparation de l'historique textuel pour l'API (5 derniers messages max)
+            # Historique limité aux 3 derniers messages pour réduire la consommation de tokens
             messages_api = [{"role": "system", "content": system_instruction}]
-            for msg in st.session_state.messages[-5:-1]:
+            for msg in st.session_state.messages[-3:-1]:
                 messages_api.append({"role": msg["role"], "content": msg["content"]})
                 
             prompt_final_texte = f"Contexte de recherche :\n{context}\n\nQuestion de l'utilisateur :\n{texte_recherche}"
