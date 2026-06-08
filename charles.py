@@ -27,14 +27,14 @@ URL_AVATAR_USER = "user"
 LISTE_PROMTS_ALEATOIRES = [
     "Question rapide à Charles IA 🤖",
     "Demande à Charles IA 💡",
-    "Astuce de Charles IA ⚡",
+    "Ask Charles IA⚡",
     "Idée avec Charles IA 🎨",
     "Apprendre avec Charles IA 📚",
     "Explique-moi, Charles IA 🧩",
     "Réponse claire par Charles IA ✨",
     "Inspiration de Charles IA 🚀",
     "Conseil de Charles IA 🔥",
-    "Info utile par Charles IA 📊"
+    "Une question pour Charles IA 📊"
 ]
 
 if "current_placeholder" not in st.session_state:
@@ -48,7 +48,7 @@ def encode_image_to_base64(uploaded_file):
 st.markdown(f"""
     <style>
     html, body, [data-testid="stAppViewContainer"] {{
-        background-color: black !important;
+        background-color: #f8fafd !important;
         color: #1f1f1f !important;
         font-family: "Google Sans", sans-serif;
     }}
@@ -120,25 +120,56 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 "stream": False         # Désactivé pour la stabilité du rendu Markdown
             }
 
-            is_vision = isinstance(st.session_state.messages[-1]["content"], list)
-            model = "llama-3.2-11b-vision-preview" if is_vision else "llama-3.3-70b-versatile"
+            # Extraction du texte du message pour la recherche contextuelle
+            dernier_message_user = st.session_state.messages[-1]["content"]
+            is_vision = isinstance(dernier_message_user, list)
+            texte_recherche = ""
             
-            # Préparation des messages
-            messages_api = [{"role": "system", "content": "Tu es Charles IA... (Prompt Système de l'utilisateur)"}]
-            for msg in st.session_state.messages[-5:]:
-                messages_api.append({"role": msg["role"], "content": msg["content"]})
+            if is_vision:
+                model = "llama-3.2-11b-vision-preview"
+                for elem in dernier_message_user:
+                    if elem["type"] == "text":
+                        texte_recherche = elem["text"]
+            else:
+                model = "llama-3.3-70b-versatile"
+                texte_recherche = dernier_message_user
 
-            try:
-                status.markdown("🤖 *Charles IA réfléchit...*")
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=messages_api,
-                    **config # Application des paramètres
-                )
-                final_text = response.choices[0].message.content
-                status.empty()
-                st.markdown(final_text)
-                st.session_state.messages.append({"role": "assistant", "content": final_text})
-                st.rerun()
-            except Exception as e:
-                st.error(f"Erreur : {e}")
+            # Recherche web facultative pour le mode texte
+            context = ""
+            if texte_recherche and not is_vision:
+                try:
+                    with DDGS() as ddgs:
+                        results = [r for r in ddgs.text(texte_recherche, max_results=1)]
+                        for result in results: context += f"Infos : {result['body']}\n\n"
+                except Exception:
+                    pass
+            
+            # --- TON PROMPT SYSTÈME PERSONNALISÉ INTÉGRÉ ---
+            system_instruction = f"""Tu es {AI_DISPLAY_NAME}, un assistant virtuel conçu par {CREATOR_NAME}. 
+Ton rôle est d’être un compagnon intelligent, fiable et engageant, 
+capable d’aider les utilisateurs à apprendre 📚, créer 🎨, résoudre des problèmes 🧩 
+et stimuler leur réflexion 💡✨.
+
+## Identité
+- Tu es une IA 🤖, pas un humain 👤.
+- Tu incarnes une personnalité professionnelle, claire et charismatique 🌟.
+- Tu as été créé EXCLUSIVEMENT par {CREATOR_NAME}. Si on te demande qui t'a conçu ou créé, réponds fièrement que c'est lui.
+- Tu ne donnes jamais d’informations fausses ou inventées 🚫❌.
+- IMPORTANT : Si l'utilisateur te demande de te présenter, de dire qui tu es ou ce que tu fais, fais une réponse très courte, dynamique et précise. Évite les longs paragraphes d'introduction.
+
+## Style de communication
+- Utilise un ton positif 😄, respectueux 🙏 et engageant 🎯.
+- Donne des réponses complètes ✅, précises 🎯 et bien structurées 📊.
+- Utilise **beaucoup d’emojis** 🎉🔥💡📚 à chaque reponse que tu donne ,pour rendre tes réponses plus expressives et amusantes.
+- Mets des emojis au début des sections ou des phrases importantes ✨👉.
+- Varie les emojis selon le contexte (🍔 pour la nourriture, 📊 pour les données, 🚀 pour les idées ambitieuses).
+- Tu peux challenger poliment l’utilisateur pour enrichir la discussion 🤔💬.
+
+## Règles
+- Ne partage jamais d’informations privées 🔒.
+- Ne donne pas de contenu protégé par copyright en entier 📜🚫.
+- Ne fais pas de prédictions politiques ou médicales non vérifiées ⚠️.
+- Cite tes sources quand tu donnes des faits 📌.
+
+## Objectif
+- Ton but
