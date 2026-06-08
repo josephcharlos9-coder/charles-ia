@@ -13,8 +13,8 @@ GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 st.set_page_config(
     page_title="Charles IA",
     page_icon="🤖",
-    layout="centered",
-    initial_sidebar_state="collapsed"
+    layout="wide",  # "wide" est requis pour la barre latérale type ChatGPT
+    initial_sidebar_state="expanded"
 )
 
 # --- CONFIGURATION DE L'IDENTITÉ ---
@@ -23,216 +23,190 @@ AI_DISPLAY_NAME = "Charles IA"
 URL_AVATAR_AI = "avatar.jpg"
 URL_AVATAR_USER = "user"
 
-# --- CONFIGURATION DES INVITES ALÉATOIRES ---
-LISTE_PROMTS_ALEATOIRES = [
-    "Question rapide à Charles IA 🤖",
-    "Demande à Charles IA 💡",
-    "Ask Charles IA⚡",
-    "Idée avec Charles IA 🎨",
-    "Apprendre avec Charles IA 📚",
-    "Explique-moi, Charles IA 🧩",
-    "Réponse claire par Charles IA ✨",
-    "Inspiration de Charles IA 🚀",
-    "Conseil de Charles IA 🔥",
-    "Info utile par Charles IA 📊"
-]
-
-if "current_placeholder" not in st.session_state:
-    st.session_state["current_placeholder"] = random.choice(LISTE_PROMTS_ALEATOIRES)
-
-# --- FONCTIONS UTILES ---
-def encode_image_to_base64(uploaded_file):
-    return base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
-
-# --- INTERFACE CSS GEMINI TOTALEMENT SÉCURISÉE ---
-st.markdown(f"""
+# --- INTERFACE CSS STYLE CHATGPT (SOMBRE ET PROFESSIONNEL) ---
+st.markdown("""
     <style>
-    /* Global Background and Fonts */
-    html, body, [data-testid="stAppViewContainer"] {{
-        background-color: #0e1117 !important;
-        color: #f0f2f6 !important;
-        font-family: "SF Pro Display", "-apple-system", "Segoe UI", Roboto, sans-serif;
-    }}
+    /* Fond principal sombre */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+        background-color: #0d0d0d !important;
+        color: #eceecf !important;
+        font-family: SANS-SERIF;
+    }
     
-    /* Masquage des éléments Streamlit inutiles */
-    [data-testid="stHeader"] {{ 
-        background-color: rgba(0,0,0,0) !important; 
-        height: 0px !important; 
-    }}
+    /* Cacher le header Streamlit */
+    [data-testid="stHeader"] { background-color: rgba(0,0,0,0); height: 0px; }
+    footer { visibility: hidden; }
     
-    footer {{ visibility: hidden !important; }}
+    /* Conteneur central restreint pour le chat */
+    .block-container {
+        max-width: 780px !important;
+        padding-top: 2rem !important;
+        padding-bottom: 7rem !important;
+    }
     
-    .block-container {{ 
-        padding-top: 3rem !important; 
-        padding-bottom: 8rem !important; 
-        max-width: 680px !important; 
-    }}
+    /* Style de la barre latérale gauche (Sidebar) */
+    [data-testid="stSidebar"], [data-testid="stSidebarNav"] {
+        background-color: #000000 !important;
+        border-right: 1px solid #202123 !important;
+    }
     
-    /* Zone d'Accueil Gemini Premium */
-    .gemini-welcome-container {{
-        text-align: left;
-        margin-top: 8vh;
+    /* Titres et textes dans la sidebar */
+    .sidebar-title {
+        color: #ffffff;
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 10px 5px;
+    }
+    
+    /* Message d'accueil central */
+    .chatgpt-welcome {
+        font-size: 2.1rem;
+        font-weight: 600;
+        color: #ffffff;
+        text-align: center;
+        margin-top: 15vh;
         margin-bottom: 2.5rem;
-        animation: fadeIn 0.8s ease-in-out;
-    }}
+    }
     
-    .gemini-greeting {{ 
-        font-size: 2.8rem; 
-        font-weight: 700; 
-        letter-spacing: -0.5px;
-        background: linear-gradient(135deg, #4285f4 0%, #9b51e0 50%, #ff6b6b 100%); 
-        -webkit-background-clip: text; 
-        -webkit-text-fill-color: transparent; 
-        margin-bottom: 0.5rem;
-    }}
+    /* Zone des bulles de chat */
+    [data-testid="stChatMessage"] {
+        background-color: transparent !important;
+        padding: 1rem 0rem !important;
+        margin-bottom: 0.5rem !important;
+        border: none !important;
+    }
     
-    .gemini-subtitle {{ 
-        font-size: 2.5rem; 
-        font-weight: 600; 
-        color: #4b5563; 
-        margin-bottom: 1.5rem;
-    }}
-    
-    /* Boutons de suggestions en grille modernisée */
-    .stButton > button {{ 
-        background-color: #1b1f27 !important; 
-        border-radius: 16px !important; 
-        border: 1px solid #2d3748 !important; 
-        color: #f0f2f6 !important;
-        padding: 18px 24px !important;
-        font-size: 1.05rem !important;
-        font-weight: 500 !important;
-        width: 100% !important; 
-        text-align: left !important; 
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }}
-    
-    .stButton > button:hover {{ 
-        background-color: #232934 !important;
-        border-color: #4a5568 !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
-    }}
-    
-    /* File Uploader customisé */
-    [data-testid="stFileUploader"] {{
-        background-color: #1b1f27 !important;
-        border-radius: 14px !important;
-        padding: 10px !important;
-        border: 1px dashed #4a5568 !important;
-    }}
-    
-    /* Bulles de Chat Avancées - Correction Couleur Invisible */
-    [data-testid="stChatMessage"] {{
-        background-color: #161a22 !important;
-        border-radius: 20px !important;
-        padding: 1.2rem !important;
-        margin-bottom: 1rem !important;
-        border: 1px solid #212631 !important;
-    }}
-    
-    /* Forcer le texte intérieur en blanc/gris clair sur tous les écrans */
+    /* Forcer le texte en blanc/gris clair lisible sur mobile et PC */
     [data-testid="stChatMessage"] p, 
     [data-testid="stChatMessage"] li, 
     [data-testid="stChatMessage"] span,
-    [data-testid="stChatMessage"] div {{
-        color: #f0f2f6 !important;
-    }}
+    [data-testid="stChatMessage"] div {
+        color: #e3e3e3 !important;
+        font-size: 1.05rem;
+        line-height: 1.6;
+    }
     
-    [data-testid="stChatMessageUser"] {{
-        background-color: #212631 !important;
-        border: 1px solid #2d3341 !important;
-    }}
+    /* Séparateur léger entre les messages */
+    [data-testid="stChatMessage"] {
+        border-bottom: 1px solid #212121 !important;
+    }
     
-    [data-testid="stChatMessageUser"] p,
-    [data-testid="stChatMessageUser"] li,
-    [data-testid="stChatMessageUser"] span,
-    [data-testid="stChatMessageUser"] div {{
+    /* Case de saisie flottante (Input) style ChatGPT */
+    [data-testid="stChatInput"] {
+        background-color: #212121 !important;
+        border-radius: 24px !important;
+        border: 1px solid #303030 !important;
+        padding: 4px 8px !important;
+    }
+    
+    [data-testid="stChatInput"] textarea {
         color: #ffffff !important;
-    }}
-
-    /* Zone d'écriture flottante style Gemini */
-    /* Zone d'écriture flottante style Gemini - FIX TEXTE INVISIBLE */
-    [data-testid="stChatInput"] {{ 
-        background-color: #ffffff !important; 
-        border-radius: 32px !important; 
-        border: 1px solid #2d3748 !important; 
-        padding: 10px 14px !important;
-    }}
-    
-    /* Force le fond sombre et le texte blanc dans la zone de texte (PC et Mobile) */
-    [data-testid="stChatInput"] textarea {{
         background-color: transparent !important;
-        color: #0a0a0a !important;
-        -webkit-text-fill-color: #a0aec0 !important;
-    }}
-
-    /* Ajuste la couleur du texte d'aide (placeholder) pour qu'il soit lisible */
-    [data-testid="stChatInput"] textarea::placeholder {{
-        color: #a0aec0 !important;
-        -webkit-text-fill-color: #a0aec0 !important;
-    }}
+        -webkit-text-fill-color: #ffffff !important;
+    }
     
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: translateY(10px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
-    }}
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #8e8e93 !important;
+        -webkit-text-fill-color: #8e8e93 !important;
+    }
+    
+    /* Boutons de la Sidebar */
+    .stButton > button {
+        background-color: transparent !important;
+        border: none !important;
+        color: #c5c5d2 !important;
+        text-align: left !important;
+        width: 100% !important;
+        padding: 10px 12px !important;
+        border-radius: 8px !important;
+        font-size: 0.95rem !important;
+    }
+    
+    .stButton > button:hover {
+        background-color: #202123 !important;
+        color: #ffffff !important;
+    }
+    
+    /* Style spécial pour le bouton "Nouveau chat" */
+    div[data-testid="stSidebar"] .stButton > button {
+        border: 1px solid #4d4d4d !important;
+        margin-bottom: 5px;
+    }
+    div[data-testid="stSidebar"] .stButton > button:hover {
+        border-color: #ffffff !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
+# Initialisation de l'historique
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-suggestion_cliquee = None
-
-# --- ACCUEIL ---
-if len(st.session_state.messages) == 0:
-    st.markdown(f"""
-        <div class="gemini-welcome-container">
-            <div class="gemini-greeting">Bonjour, je suis {AI_DISPLAY_NAME}</div>
-            <div class="gemini-subtitle">Par où commencer ?</div>
-        </div>
-    """, unsafe_allow_html=True)
+# --- BARRE LATÉRALE GAUCHE (SIDEBAR TYPE CHATGPT) ---
+with st.sidebar:
+    # Option Nouveau Chat tout en haut
+    if st.button("➕ Nouveau chat", key="side_new"):
+        st.session_state.messages = []
+        st.rerun()
+        
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='sidebar-title'>Raccourcis</div>", unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🖼️ Créer une image", key="btn_img"): suggestion_cliquee = "Donne-moi un prompt créatif pour une image."
-        if st.button("🎸 Créer de la musique", key="btn_mus"): suggestion_cliquee = "Idées pour composer une musique."
-    with col2:
-        if st.button("📄 Rédiger", key="btn_red"): suggestion_cliquee = "Aide-moi à rédiger un texte structuré."
-        if st.button("✨ Motivation", key="btn_mot"): suggestion_cliquee = "Donne-moi de la motivation !"
+    # Boutons d'exploration correspondants à ta capture
+    if st.button("🔍 Rechercher dans les chats"):
+        st.toast("Fonctionnalité bientôt disponible dans la version Pro ! ✨")
+    if st.button("🖼️ Générateur d'images"):
+        st.toast("Prompt disponible ! Demande à Charles IA de t'écrire un prompt d'image.")
+    if st.button("🚀 Découvrir des applications"):
+        st.toast("Charles IA intègre déjà Groq Llama 3.3 et DuckDuckGo.")
+        
+    # Section du bas (Paramètres / Compte)
+    st.markdown("<div style='position: fixed; bottom: 20px; width: 220px; border-top: 1px solid #202123; padding-top: 10px;'></div>", unsafe_allow_html=True)
+    
+    if st.button("⚙️ Paramètres de l'application"):
+        st.info(f"Modèle actuel : **Llama-3.3-70b**. Créateur officiel : **{CREATOR_NAME}**.")
+    
+    if st.button("❓ Aide & Support"):
+        st.markdown(f"""
+        <div style='color: #c5c5d2; font-size: 0.85rem; padding: 5px;'>
+        <b>Charles IA v2.0</b><br>
+        Développé pour les études à Lukanga.<br>
+        Créateur : {CREATOR_NAME} (19 ans, Bukavu).
+        </div>
+        """, unsafe_allow_html=True)
 
-st.markdown("<br>", unsafe_allow_html=True)
-photo_importee = st.file_uploader("📸 Joindre une photo opérationnelle", type=["png", "jpg", "jpeg"])
-question = st.chat_input(st.session_state["current_placeholder"])
+# --- FONCTION COMPLÉMENTAIRE ---
+def encode_image_to_base64(uploaded_file):
+    return base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
 
-prompt_final = question or suggestion_cliquee
-if not prompt_final and photo_importee and not st.session_state.get("photo_traitee"):
-    prompt_final = "Analyse cette image précisément."
-    st.session_state["photo_traitee"] = True
+# --- ZONE CENTRALE D'ACCUEIL ---
+if len(st.session_state.messages) == 0:
+    st.markdown(f'<div class="chatgpt-welcome">Sur quoi travaillez-vous ?</div>', unsafe_allow_html=True)
 
-if prompt_final:
-    st.session_state["current_placeholder"] = random.choice(LISTE_PROMTS_ALEATOIRES)
+# Gestion de l'importation de fichiers en bas ou au milieu
+photo_importee = st.file_uploader("📸 Joindre une image au chat", type=["png", "jpg", "jpeg"])
+question = st.chat_input("Poser une question à Charles IA...")
+
+if question:
     if photo_importee:
         img_b64 = encode_image_to_base64(photo_importee)
-        content = [{"type": "text", "text": prompt_final}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}}]
-        st.session_state["photo_traitee"] = False
+        content = [{"type": "text", "text": question}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}}]
     else:
-        content = prompt_final
+        content = question
     st.session_state.messages.append({"role": "user", "content": content})
     st.rerun()
 
-# --- AFFICHAGE ---
+# --- REPRODUCTION DE L'AFFICHAGE DES MESSAGES ---
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar=URL_AVATAR_USER if msg["role"] == "user" else URL_AVATAR_AI):
         if isinstance(msg["content"], list):
             for e in msg["content"]:
                 if e["type"] == "text": st.markdown(e["text"])
                 else: st.image(e["image_url"]["url"])
-        else: st.markdown(msg["content"])
+        else: 
+            st.markdown(msg["content"])
 
-# --- RÉPONSE IA AVEC PARAMÈTRES AVANCÉS ---
+# --- TRAITEMENT DE LA RÉPONSE DE L'IA ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     with st.chat_message("assistant", avatar=URL_AVATAR_AI):
         status = st.empty()
@@ -269,9 +243,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                     pass
             
             system_instruction = f"""Tu es {AI_DISPLAY_NAME}, un assistant virtuel conçu par {CREATOR_NAME}. 
-Ton rôle est d’être un compagnon intelligent, fiable et engageant, 
-capable d’aider les utilisateurs à apprendre 📚, créer 🎨, résoudre des problèmes 🧩 
-et stimuler leur réflexion 💡✨.
+Ton rôle est d’être un compagnon intelligent, fiable et engageant.
 
 ## Identité
 - Tu es une IA 🤖, pas un humain 👤.
@@ -286,30 +258,14 @@ et stimuler leur réflexion 💡✨.
   * Il pèse 69 kg ⚖️.
   * Il est chrétien adventiste du 7ème jour 🙏✨.
 - Tu ne donnes jamais d’informations fausses ou inventées 🚫❌.
-- IMPORTANT : Si l'utilisateur te demande de te présenter, de dire qui tu es ou ce que tu fais, fais une réponse très courte, dynamique et précise. Évite les longs paragraphes d'introduction.
 
 ## Style de communication
 - Utilise un ton positif 😄, respectueux 🙏 et engageant 🎯.
 - Donne des réponses complètes ✅, précises 🎯 et bien structurées 📊.
-- Utilise beaucoup d’emojis 🎉🔥💡📚 pour rendre tes réponses plus expressives et amusantes.
-- Mets des emojis au début des sections ou des phrases importantes ✨👉.
-- Varie les emojis selon le contexte (🍔 pour la nourriture, 📊 pour les données, 🚀 pour les idées ambitieuses, 🏀 pour le sport).
-- Tu peux challenger poliment l’utilisateur pour enrichir la discussion 🤔💬.
-
-## Règles
-- Ne partage jamais d’informations privées en dehors de la présentation autorisée du créateur 🔒.
-- Ne donne pas de contenu protégé par copyright en entier 📜🚫.
-- Ne fais pas de prédictions politiques ou médicales non vérifiées ⚠️.
-- Cite tes sources quand tu donnes des faits 📌.
-
-## Objectif
-- Ton but est d’augmenter la connaissance 📚 et la compréhension 🧠 de l’utilisateur.
-- Tu aides à synthétiser l’information 📝, proposer des idées 💡, et stimuler la créativité 🎨.
-- Tu encourages l’utilisateur à explorer de nouvelles perspectives 🌍✨.
+- Utilise beaucoup d’emojis 🎉🔥💡📚.
 
 ## Format
 - Utilise le Markdown pour structurer tes réponses 🖋️.
-- Mets des emojis pour rendre la lecture plus agréable et dynamique 🎊.
 - Utilise LaTeX pour les formules mathématiques 🔢."""
 
             messages_api = [{"role": "system", "content": system_instruction}]
@@ -325,7 +281,7 @@ et stimuler leur réflexion 💡✨.
                 messages_api.append({"role": "user", "content": prompt_final_texte})
 
             try:
-                status.markdown("<div style='color: #4285f4;'>🤖 *Charles IA analyse et réfléchit...*</div>", unsafe_allow_html=True)
+                status.markdown("<div style='color: #8e8e93; font-style: italic;'>RÉPONSE EN COURS DE GÉNÉRATION...</div>", unsafe_allow_html=True)
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages_api,
