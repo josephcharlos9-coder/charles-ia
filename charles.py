@@ -2,7 +2,6 @@ import streamlit as st
 import random
 import urllib.request
 import time
-import base64
 from duckduckgo_search import DDGS
 from groq import Groq
 
@@ -13,7 +12,7 @@ GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 st.set_page_config(
     page_title="Charles IA",
     page_icon="🤖",
-    layout="wide",  # "wide" est requis pour la barre latérale type ChatGPT
+    layout="wide",  # Requis pour la barre latérale type ChatGPT
     initial_sidebar_state="expanded"
 )
 
@@ -100,14 +99,14 @@ st.markdown("""
     }
     
     [data-testid="stChatInput"] textarea {
-        color: #000000 !important;
+        color: #ffffff !important;
         background-color: transparent !important;
-        -webkit-text-fill-color: #000000 !important;
+        -webkit-text-fill-color: #ffffff !important;
     }
     
     [data-testid="stChatInput"] textarea::placeholder {
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
+        color: #8e8e93 !important;
+        -webkit-text-fill-color: #8e8e93 !important;
     }
     
     /* Boutons de la Sidebar */
@@ -175,36 +174,21 @@ with st.sidebar:
         </div>
         """, unsafe_allow_html=True)
 
-# --- FONCTION COMPLÉMENTAIRE ---
-def encode_image_to_base64(uploaded_file):
-    return base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
-
 # --- ZONE CENTRALE D'ACCUEIL ---
 if len(st.session_state.messages) == 0:
-    st.markdown(f'<div class="chatgpt-welcome">Bonjour je suis Charles IA Sur quoi travaillez-vous ?</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="chatgpt-welcome">Sur quoi travaillez-vous ?</div>', unsafe_allow_html=True)
 
-# Gestion de l'importation de fichiers en bas ou au milieu
-photo_importee = st.file_uploader("📸 Joindre une image au chat", type=["png", "jpg", "jpeg"])
+# Case de saisie des questions
 question = st.chat_input("Poser une question à Charles IA...")
 
 if question:
-    if photo_importee:
-        img_b64 = encode_image_to_base64(photo_importee)
-        content = [{"type": "text", "text": question}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}}]
-    else:
-        content = question
-    st.session_state.messages.append({"role": "user", "content": content})
+    st.session_state.messages.append({"role": "user", "content": question})
     st.rerun()
 
 # --- REPRODUCTION DE L'AFFICHAGE DES MESSAGES ---
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar=URL_AVATAR_USER if msg["role"] == "user" else URL_AVATAR_AI):
-        if isinstance(msg["content"], list):
-            for e in msg["content"]:
-                if e["type"] == "text": st.markdown(e["text"])
-                else: st.image(e["image_url"]["url"])
-        else: 
-            st.markdown(msg["content"])
+        st.markdown(msg["content"])
 
 # --- TRAITEMENT DE LA RÉPONSE DE L'IA ---
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
@@ -220,21 +204,12 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 "stream": False
             }
 
-            dernier_message_user = st.session_state.messages[-1]["content"]
-            is_vision = isinstance(dernier_message_user, list)
-            texte_recherche = ""
-            
-            if is_vision:
-                model = "llama-3.2-11b-vision-preview"
-                for elem in dernier_message_user:
-                    if elem["type"] == "text":
-                        texte_recherche = elem["text"]
-            else:
-                model = "llama-3.3-70b-versatile"
-                texte_recherche = dernier_message_user
+            texte_recherche = st.session_state.messages[-1]["content"]
+            model = "llama-3.3-70b-versatile"
 
+            # Recherche web
             context = ""
-            if texte_recherche and not is_vision:
+            if texte_recherche:
                 try:
                     with DDGS() as ddgs:
                         results = [r for r in ddgs.text(texte_recherche, max_results=1)]
@@ -268,17 +243,13 @@ Ton rôle est d’être un compagnon intelligent, fiable et engageant.
 - Utilise le Markdown pour structurer tes réponses 🖋️.
 - Utilise LaTeX pour les formules mathématiques 🔢."""
 
+            # Préparation de l'historique textuel pour l'API (5 derniers messages max)
             messages_api = [{"role": "system", "content": system_instruction}]
-            
-            if is_vision:
-                for msg in st.session_state.messages[-4:]:
-                    messages_api.append({"role": msg["role"], "content": msg["content"]})
-            else:
-                for msg in st.session_state.messages[-5:-1]:
-                    messages_api.append({"role": msg["role"], "content": msg["content"]})
+            for msg in st.session_state.messages[-5:-1]:
+                messages_api.append({"role": msg["role"], "content": msg["content"]})
                 
-                prompt_final_texte = f"Contexte de recherche :\n{context}\n\nQuestion de l'utilisateur :\n{texte_recherche}"
-                messages_api.append({"role": "user", "content": prompt_final_texte})
+            prompt_final_texte = f"Contexte de recherche :\n{context}\n\nQuestion de l'utilisateur :\n{texte_recherche}"
+            messages_api.append({"role": "user", "content": prompt_final_texte})
 
             try:
                 status.markdown("<div style='color: #8e8e93; font-style: italic;'>RÉPONSE EN COURS DE GÉNÉRATION...</div>", unsafe_allow_html=True)
