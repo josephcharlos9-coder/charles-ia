@@ -46,11 +46,13 @@ def encode_image_to_base64(uploaded_file):
 
 # --- NOUVELLE INTERFACE MODERNE ET COMPLÈTE (CSS) ---
 st.markdown(f"""
+# --- NOUVELLE INTERFACE MODERNE ET COMPLÈTE (CSS) ---
+st.markdown(f"""
     <style>
     /* Global Background and Fonts */
     html, body, [data-testid="stAppViewContainer"] {{
         background-color: #0e1117 !important;
-        color: #e2e8f0 !important;
+        color: #f0f2f6 !important;
         font-family: "SF Pro Display", "-apple-system", "Segoe UI", Roboto, sans-serif;
     }}
     
@@ -94,7 +96,7 @@ st.markdown(f"""
         background-color: #1b1f27 !important; 
         border-radius: 16px !important; 
         border: 1px solid #2d3748 !important; 
-        color: #e2e8f0 !important;
+        color: #f0f2f6 !important;
         padding: 18px 24px !important;
         font-size: 1.05rem !important;
         font-weight: 500 !important;
@@ -119,7 +121,7 @@ st.markdown(f"""
         border: 1px dashed #4a5568 !important;
     }}
     
-    /* Bulles de Chat Avancées */
+    /* Bulles de Chat Avancées - CORRECTION COULEUR INVISIBLE */
     [data-testid="stChatMessage"] {{
         background-color: #161a22 !important;
         border-radius: 20px !important;
@@ -128,9 +130,24 @@ st.markdown(f"""
         border: 1px solid #212631 !important;
     }}
     
+    /* Forcer le texte intérieur (paragraphes, listes, etc.) en blanc/gris clair */
+    [data-testid="stChatMessage"] p, 
+    [data-testid="stChatMessage"] li, 
+    [data-testid="stChatMessage"] span,
+    [data-testid="stChatMessage"] div {{
+        color: #f0f2f6 !important;
+    }}
+    
     [data-testid="stChatMessageUser"] {{
         background-color: #212631 !important;
         border: 1px solid #2d3341 !important;
+    }}
+    
+    [data-testid="stChatMessageUser"] p,
+    [data-testid="stChatMessageUser"] li,
+    [data-testid="stChatMessageUser"] span,
+    [data-testid="stChatMessageUser"] div {{
+        color: #ffffff !important;
     }}
 
     /* Zone d'écriture flottante style Gemini */
@@ -142,8 +159,8 @@ st.markdown(f"""
         padding: 10px 14px !important;
     }}
     
-    [data-testid="stChatInput"] input {{
-        color: #e2e8f0 !important;
+    [data-testid="stChatInput"] textarea {{
+        color: #ffffff !important;
     }}
     
     @keyframes fadeIn {{
@@ -151,6 +168,7 @@ st.markdown(f"""
         to {{ opacity: 1; transform: translateY(0); }}
     }}
     </style>
+""", unsafe_allow_html=True)
 """, unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
