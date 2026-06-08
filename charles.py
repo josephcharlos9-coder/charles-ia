@@ -34,7 +34,7 @@ LISTE_PROMTS_ALEATOIRES = [
     "Réponse claire par Charles IA ✨",
     "Inspiration de Charles IA 🚀",
     "Conseil de Charles IA 🔥",
-    "Une question pour Charles IA 📊"
+    "Info utile par Charles IA 📊"
 ]
 
 if "current_placeholder" not in st.session_state:
@@ -144,7 +144,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 except Exception:
                     pass
             
-            # --- TON PROMPT SYSTÈME PERSONNALISÉ INTÉGRÉ ---
+            # --- PROMPT SYSTÈME PERSONNALISÉ CORRIGÉ ---
             system_instruction = f"""Tu es {AI_DISPLAY_NAME}, un assistant virtuel conçu par {CREATOR_NAME}. 
 Ton rôle est d’être un compagnon intelligent, fiable et engageant, 
 capable d’aider les utilisateurs à apprendre 📚, créer 🎨, résoudre des problèmes 🧩 
@@ -160,7 +160,7 @@ et stimuler leur réflexion 💡✨.
 ## Style de communication
 - Utilise un ton positif 😄, respectueux 🙏 et engageant 🎯.
 - Donne des réponses complètes ✅, précises 🎯 et bien structurées 📊.
-- Utilise **beaucoup d’emojis** 🎉🔥💡📚 à chaque reponse que tu donne ,pour rendre tes réponses plus expressives et amusantes.
+- Utilise beaucoup d’emojis 🎉🔥💡📚 pour rendre tes réponses plus expressives et amusantes.
 - Mets des emojis au début des sections ou des phrases importantes ✨👉.
 - Varie les emojis selon le contexte (🍔 pour la nourriture, 📊 pour les données, 🚀 pour les idées ambitieuses).
 - Tu peux challenger poliment l’utilisateur pour enrichir la discussion 🤔💬.
@@ -172,4 +172,39 @@ et stimuler leur réflexion 💡✨.
 - Cite tes sources quand tu donnes des faits 📌.
 
 ## Objectif
-- Ton but
+- Ton but est d’augmenter la connaissance 📚 et la compréhension 🧠 de l’utilisateur.
+- Tu aides à synthétiser l’information 📝, proposer des idées 💡, et stimuler la créativité 🎨.
+- Tu encourages l’utilisateur à explorer de nouvelles perspectives 🌍✨.
+
+## Format
+- Utilise le Markdown pour structurer tes réponses 🖋️.
+- Mets des emojis pour rendre la lecture plus agréable et dynamique 🎊.
+- Utilise LaTeX pour les formules mathématiques 🔢."""
+
+            # Préparation de l'historique pour l'API
+            messages_api = [{"role": "system", "content": system_instruction}]
+            
+            if is_vision:
+                for msg in st.session_state.messages[-4:]:
+                    messages_api.append({"role": msg["role"], "content": msg["content"]})
+            else:
+                for msg in st.session_state.messages[-5:-1]:
+                    messages_api.append({"role": msg["role"], "content": msg["content"]})
+                
+                prompt_final_texte = f"Contexte de recherche :\n{context}\n\nQuestion de l'utilisateur :\n{texte_recherche}"
+                messages_api.append({"role": "user", "content": prompt_final_texte})
+
+            try:
+                status.markdown("🤖 *Charles IA réfléchit...*")
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=messages_api,
+                    **config
+                )
+                final_text = response.choices[0].message.content
+                status.empty()
+                st.markdown(final_text)
+                st.session_state.messages.append({"role": "assistant", "content": final_text})
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erreur : {e}")
