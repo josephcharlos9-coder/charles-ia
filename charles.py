@@ -153,16 +153,25 @@ st.markdown(f"""
     }}
 
     /* Zone d'écriture flottante style Gemini */
+    /* Zone d'écriture flottante style Gemini - FIX TEXTE INVISIBLE */
     [data-testid="stChatInput"] {{ 
-        background-color: rgba(27, 31, 39, 0.85) !important; 
-        backdrop-filter: blur(12px) !important;
+        background-color: #1b1f27 !important; 
         border-radius: 32px !important; 
         border: 1px solid #2d3748 !important; 
         padding: 10px 14px !important;
     }}
     
+    /* Force le fond sombre et le texte blanc dans la zone de texte (PC et Mobile) */
     [data-testid="stChatInput"] textarea {{
+        background-color: transparent !important;
         color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }}
+
+    /* Ajuste la couleur du texte d'aide (placeholder) pour qu'il soit lisible */
+    [data-testid="stChatInput"] textarea::placeholder {{
+        color: #a0aec0 !important;
+        -webkit-text-fill-color: #a0aec0 !important;
     }}
     
     @keyframes fadeIn {{
