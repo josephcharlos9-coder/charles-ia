@@ -44,9 +44,7 @@ if "current_placeholder" not in st.session_state:
 def encode_image_to_base64(uploaded_file):
     return base64.b64encode(uploaded_file.getvalue()).decode("utf-8")
 
-# --- NOUVELLE INTERFACE MODERNE ET COMPLÈTE (CSS) ---
-st.markdown(f"""
-# --- NOUVELLE INTERFACE MODERNE ET COMPLÈTE (CSS) ---
+# --- INTERFACE CSS GEMINI TOTALEMENT SÉCURISÉE ---
 st.markdown(f"""
     <style>
     /* Global Background and Fonts */
@@ -57,8 +55,12 @@ st.markdown(f"""
     }}
     
     /* Masquage des éléments Streamlit inutiles */
-    [data-testid="stHeader"] {{ background-color: rgba(0,0,0,0); height: 0px; }}
-    footer {{visibility: hidden;}}
+    [data-testid="stHeader"] {{ 
+        background-color: rgba(0,0,0,0) !important; 
+        height: 0px !important; 
+    }}
+    
+    footer {{ visibility: hidden !important; }}
     
     .block-container {{ 
         padding-top: 3rem !important; 
@@ -121,7 +123,7 @@ st.markdown(f"""
         border: 1px dashed #4a5568 !important;
     }}
     
-    /* Bulles de Chat Avancées - CORRECTION COULEUR INVISIBLE */
+    /* Bulles de Chat Avancées - Correction Couleur Invisible */
     [data-testid="stChatMessage"] {{
         background-color: #161a22 !important;
         border-radius: 20px !important;
@@ -130,7 +132,7 @@ st.markdown(f"""
         border: 1px solid #212631 !important;
     }}
     
-    /* Forcer le texte intérieur (paragraphes, listes, etc.) en blanc/gris clair */
+    /* Forcer le texte intérieur en blanc/gris clair sur tous les écrans */
     [data-testid="stChatMessage"] p, 
     [data-testid="stChatMessage"] li, 
     [data-testid="stChatMessage"] span,
@@ -168,7 +170,6 @@ st.markdown(f"""
         to {{ opacity: 1; transform: translateY(0); }}
     }}
     </style>
-""", unsafe_allow_html=True)
 """, unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
@@ -265,7 +266,7 @@ et stimuler leur réflexion 💡✨.
 
 ## Identité
 - Tu es une IA 🤖, pas un humain 👤.
-- Tu incares une personnalité professionnelle, claire et charismatique 🌟.
+- Tu incarnes une personnalité professionnelle, claire et charismatique 🌟.
 - Tu as été créé EXCLUSIVEMENT par {CREATOR_NAME}. 
 - IMPORTANT - À PROPOS DE TON CRÉATEUR : Si un utilisateur t'interroge sur {CREATOR_NAME}, voici ses informations réelles à utiliser de manière naturelle, fière et polie :
   * Il s'appelle {CREATOR_NAME}.
