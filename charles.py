@@ -100,14 +100,14 @@ st.markdown("""
     }
     
     [data-testid="stChatInput"] textarea {
-        color: #ffffff !important;
+        color: #000000 !important;
         background-color: transparent !important;
-        -webkit-text-fill-color: #ffffff !important;
+        -webkit-text-fill-color: #000000 !important;
     }
     
     [data-testid="stChatInput"] textarea::placeholder {
-        color: #8e8e93 !important;
-        -webkit-text-fill-color: #8e8e93 !important;
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
     }
     
     /* Boutons de la Sidebar */
