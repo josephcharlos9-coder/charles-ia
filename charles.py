@@ -51,10 +51,12 @@ st.markdown("""
     
     /* Titres et textes dans la sidebar */
     .sidebar-title {
-        color: #ffffff;
-        font-size: 0.9rem;
-        font-weight: 600;
-        padding: 10px 5px;
+        color: #666666;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 15px 12px 5px 12px;
     }
     
     /* Message d'accueil central */
@@ -109,30 +111,37 @@ st.markdown("""
         -webkit-text-fill-color: #8e8e93 !important;
     }
     
-    /* Boutons de la Sidebar */
-    .stButton > button {
+    /* STYLE DES BOUTONS DE LA SIDEBAR (Nouveau Look ChatGPT) */
+    div[data-testid="stSidebar"] .stButton > button {
         background-color: transparent !important;
         border: none !important;
-        color: #c5c5d2 !important;
+        color: #ecefff !important;
         text-align: left !important;
         width: 100% !important;
-        padding: 10px 12px !important;
+        padding: 12px 14px !important;
         border-radius: 8px !important;
-        font-size: 0.95rem !important;
+        font-size: 0.9rem !important;
+        font-weight: 500 !important;
+        transition: background-color 0.2s ease !important;
+        display: flex !important;
+        align-items: center !important;
     }
     
-    .stButton > button:hover {
-        background-color: #202123 !important;
+    /* Effet au survol des boutons de la barre latérale */
+    div[data-testid="stSidebar"] .stButton > button:hover {
+        background-color: #171717 !important;
         color: #ffffff !important;
     }
     
-    /* Style spécial pour le bouton "Nouveau chat" */
-    div[data-testid="stSidebar"] .stButton > button {
-        border: 1px solid #4d4d4d !important;
-        margin-bottom: 5px;
+    /* Style exclusif pour le bouton "Nouveau chat" tout en haut */
+    div[data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
+        border: 1px solid #303030 !important;
+        margin-bottom: 10px !important;
+        background-color: transparent !important;
     }
-    div[data-testid="stSidebar"] .stButton > button:hover {
-        border-color: #ffffff !important;
+    div[data-testid="stSidebar"] .stButton:nth-of-type(1) > button:hover {
+        border-color: #666666 !important;
+        background-color: #171717 !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -148,24 +157,23 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
         
-    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
     st.markdown("<div class='sidebar-title'>Raccourcis</div>", unsafe_allow_html=True)
     
     # Boutons d'exploration correspondants à ta capture
-    if st.button("🔍 Rechercher dans les chats"):
-        st.toast("Fonctionnalité bientôt disponible dans la version Pro ! ✨")
-    if st.button("🖼️ Générateur d'images"):
-        st.toast("Prompt disponible ! Demande à Charles IA de t'écrire un prompt d'image.")
-    if st.button("🚀 Découvrir des applications"):
-        st.toast("Charles IA intègre déjà Groq Llama 3.3 et DuckDuckGo.")
+    if st.button("🔍 Rechercher dans les chats", key="btn_search_chat"):
+        st.toast("🔒 Cette fonctionnalité sera débloquée dans la version Pro, conçue pour une expérience IA avancée✨.")
+    if st.button("🖼️ Générateur d'images", key="btn_img_gen"):
+        st.toast("🖼️ Le générateur d’images est prêt : demande à Charles IA de créer ton prompt personnalisé.")
+    if st.button("🚀 Découvrir des applications", key="btn_apps"):
+        st.toast("🚀 Explorez l’écosystème Pro : Charles IA s’appuie déjà sur Groq Llama 3.3 et DuckDuckGo pour des performances optimisées.")
         
     # Section du bas (Paramètres / Compte)
     st.markdown("<div style='position: fixed; bottom: 20px; width: 220px; border-top: 1px solid #202123; padding-top: 10px;'></div>", unsafe_allow_html=True)
     
-    if st.button("⚙️ Paramètres de l'application"):
+    if st.button("⚙️ Paramètres de l'application", key="btn_settings"):
         st.info(f"Modèle actuel : **Llama-3.3-70b**. Créateur officiel : **{CREATOR_NAME}**.")
     
-    if st.button("❓ Aide & Support"):
+    if st.button("❓ Aide & Support", key="btn_help"):
         st.markdown(f"""
         <div style='color: #c5c5d2; font-size: 0.85rem; padding: 5px;'>
         <b>Charles IA v2.0</b><br>
@@ -176,11 +184,10 @@ with st.sidebar:
 
 # --- ZONE CENTRALE D'ACCUEIL ---
 if len(st.session_state.messages) == 0:
-    st.markdown(f'<div class="chatgpt-welcome">Sur quoi travaillez-vous ?</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="chatgpt-welcome">Bonjour je suis Charles IA ,  Sur quoi travaillez-vous ?</div>', unsafe_allow_html=True)
 
 # Case de saisie des questions
 question = st.chat_input("Poser une question à Charles IA...")
-
 if question:
     st.session_state.messages.append({"role": "user", "content": question})
     st.rerun()
@@ -220,28 +227,27 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             system_instruction = f"""Tu es {AI_DISPLAY_NAME}, un assistant virtuel conçu par {CREATOR_NAME}. 
 Ton rôle est d’être un compagnon intelligent, fiable et engageant.
 
-## Identité
-- Tu es une IA 🤖, pas un humain 👤.
-- Tu incarnes une personnalité professionnelle, claire et charismatique 🌟.
-- Tu as été créé EXCLUSIVEMENT par {CREATOR_NAME}. 
-- IMPORTANT - À PROPOS DE TON CRÉATEUR : Si un utilisateur t'interroge sur {CREATOR_NAME}, voici ses informations réelles à utiliser de manière naturelle, fière et polie :
-  * Il s'appelle {CREATOR_NAME}.
-  * Il est né et a grandi à Bukavu 🌍.
-  * Il a 19 ans 🎂.
-  * Il réside actuellement à Lukanga pour ses études universitaires 📚.
-  * C'est un grand passionné de basketball 🏀.
-  * Il pèse 69 kg ⚖️.
-  * Il est chrétien adventiste du 7ème jour 🙏✨.
-- Tu ne donnes jamais d’informations fausses ou inventées 🚫❌.
+Identité
+Tu es une IA 🤖, pas un humain 👤.
+Tu incarnes une personnalité professionnelle, claire et charismatique 🌟.
+Tu as été créé EXCLUSIVEMENT par {CREATOR_NAME}.
+IMPORTANT - À PROPOS DE TON CRÉATEUR : Si un utilisateur t'interroge sur {CREATOR_NAME}, voici ses informations réelles à utiliser de manière naturelle, fière et polie : Il s'appelle {CREATOR_NAME}.
+Il est né et a grandi à Bukavu 🌍.
+Il a 19 ans 🎂.
+Il réside actuellement à Lukanga pour ses études universitaires 📚.
+C'est un grand passionné de basketball 🏀.
+Il pèse 69 kg ⚖️.
+Il est chrétien adventiste du 7ème jour 🙏✨.
+Tu ne donnes jamais d’informations fausses ou inventées 🚫❌.
 
-## Style de communication
-- Utilise un ton positif 😄, respectueux 🙏 et engageant 🎯.
-- Donne des réponses complètes ✅, précises 🎯 et bien structurées 📊.
-- Utilise beaucoup d’emojis 🎉🔥💡📚.
+Style de communication
+Utilise un ton positif 😄, respectueux 🙏 et engageant 🎯.
+Donne des réponses complètes ✅, précises 🎯 et bien structurées 📊.
+Utilise beaucoup d’emojis 🎉🔥💡📚.
 
-## Format
-- Utilise le Markdown pour structurer tes réponses 🖋️.
-- Utilise LaTeX pour les formules mathématiques 🔢."""
+Format
+Utilise le Markdown pour structurer tes réponses 🖋️.
+Utilise LaTeX pour les formules mathématiques 🔢."""
 
             # Préparation de l'historique textuel pour l'API (5 derniers messages max)
             messages_api = [{"role": "system", "content": system_instruction}]
@@ -252,7 +258,7 @@ Ton rôle est d’être un compagnon intelligent, fiable et engageant.
             messages_api.append({"role": "user", "content": prompt_final_texte})
 
             try:
-                status.markdown("<div style='color: #8e8e93; font-style: italic;'>RÉPONSE EN COURS DE GÉNÉRATION...</div>", unsafe_allow_html=True)
+                status.markdown("<div style='color: #8e8e93; font-style: italic;'>charles réfléchit...</div>", unsafe_allow_html=True)
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages_api,
