@@ -155,7 +155,7 @@ st.markdown(f"""
     /* Zone d'écriture flottante style Gemini */
     /* Zone d'écriture flottante style Gemini - FIX TEXTE INVISIBLE */
     [data-testid="stChatInput"] {{ 
-        background-color: #1b1f27 !important; 
+        background-color: #ffffff !important; 
         border-radius: 32px !important; 
         border: 1px solid #2d3748 !important; 
         padding: 10px 14px !important;
