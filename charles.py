@@ -8,6 +8,7 @@ logo_image = Image.open("iconcharlesia.jpg")
 
 st.set_page_config(
     page_title="Charles IA",
+    page_icon=logo_image,
     page_icon="🤖",
     layout="wide"
 )
