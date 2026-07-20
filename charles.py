@@ -17,7 +17,7 @@ st.set_page_config(
 # --- CONFIGURATION DE L'IDENTITÉ ---
 CREATOR_NAME = "Charles Joseph"
 AI_DISPLAY_NAME = "Charles IA"
-URL_AVATAR_AI = "🤖"  # Rejoint les icônes texte si image locale introuvable
+URL_AVATAR_AI = "iconcharlesia.jpg"  # Rejoint les icônes texte si image locale introuvable
 URL_AVATAR_USER = "👤"
 
 # --- INTERFACE CSS STYLE CHATGPT (SOMBRE ET PROFESSIONNEL) ---
