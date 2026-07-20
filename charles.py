@@ -1,489 +1,275 @@
 import streamlit as st
-import streamlit.components.v1 as components
+import random
+import urllib.request
+import time
 from duckduckgo_search import DDGS
 from groq import Groq
 
-# 1. Clé API & Configuration
+# Récupération sécurisée de la clé API
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 
+# Configuration de la page
 st.set_page_config(
-    page_title="Charles IA",
-    page_icon="🤖",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    page_title="Charles IA",
+    page_icon="🤖",
+    layout="wide",  # Requis pour la barre latérale type ChatGPT
+    initial_sidebar_state="expanded"
 )
 
-# Masquer l'interface Streamlit native
-st.markdown("""
-    <style>
-    [data-testid="stHeader"] { display: none !important; }
-    footer { display: none !important; }
-    .block-container { padding: 0 !important; max-width: 100% !important; }
-    iframe { display: block; border: none; width: 100vw; height: 100vh; }
-    </style>
-""", unsafe_allow_html=True)
-
-# 2. Variables & Historique
+# --- CONFIGURATION DE L'IDENTITÉ ---
 CREATOR_NAME = "Charles Joseph"
 AI_DISPLAY_NAME = "Charles IA"
+URL_AVATAR_AI = "avatar.jpg"
+URL_AVATAR_USER = "user"
 
+# --- INTERFACE CSS STYLE CHATGPT (SOMBRE ET PROFESSIONNEL) ---
+st.markdown("""
+    <style>
+    /* Fond principal sombre */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+        background-color: #0d0d0d !important;
+        color: #eceecf !important;
+        font-family: SANS-SERIF;
+    }
+    
+    /* Cacher le header Streamlit */
+    [data-testid="stHeader"] { background-color: rgba(0,0,0,0); height: 0px; }
+    footer { visibility: hidden; }
+    
+    /* Conteneur central restreint pour le chat */
+    .block-container {
+        max-width: 780px !important;
+        padding-top: 2rem !important;
+        padding-bottom: 7rem !important;
+    }
+    
+    /* Style de la barre latérale gauche (Sidebar) */
+    [data-testid="stSidebar"], [data-testid="stSidebarNav"] {
+        background-color: #000000 !important;
+        border-right: 1px solid #202123 !important;
+    }
+    
+    /* Titres et textes dans la sidebar */
+    .sidebar-title {
+        color: #666666;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 15px 12px 5px 12px;
+    }
+    
+    /* Message d'accueil central */
+    .chatgpt-welcome {
+        font-size: 2.1rem;
+        font-weight: 600;
+        color: #ffffff;
+        text-align: center;
+        margin-top: 15vh;
+        margin-bottom: 2.5rem;
+    }
+    
+    /* Zone des bulles de chat */
+    [data-testid="stChatMessage"] {
+        background-color: transparent !important;
+        padding: 1rem 0rem !important;
+        margin-bottom: 0.5rem !important;
+        border: none !important;
+    }
+    
+    /* Forcer le texte en blanc/gris clair lisible sur mobile et PC */
+    [data-testid="stChatMessage"] p, 
+    [data-testid="stChatMessage"] li, 
+    [data-testid="stChatMessage"] span,
+    [data-testid="stChatMessage"] div {
+        color: #e3e3e3 !important;
+        font-size: 1.05rem;
+        line-height: 1.6;
+    }
+    
+    /* Séparateur léger entre les messages */
+    [data-testid="stChatMessage"] {
+        border-bottom: 1px solid #212121 !important;
+    }
+    
+    /* Case de saisie flottante (Input) style ChatGPT */
+    [data-testid="stChatInput"] {
+        background-color: #000000 !important;
+        border-radius: 24px !important;
+        border: 1px solid #303030 !important;
+        padding: 4px 8px !important;
+    }
+    
+    [data-testid="stChatInput"] textarea {
+        color: #000000 !important;
+        background-color: transparent !important;
+        -webkit-text-fill-color: #0a0a0a !important;
+    }
+    
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #0a0a0a !important;
+        -webkit-text-fill-color: #8e8e93 !important;
+    }
+    
+    /* STYLE DES BOUTONS DE LA SIDEBAR (Look ChatGPT) */
+    div[data-testid="stSidebar"] .stButton > button {
+        background-color: transparent !important;
+        border: none !important;
+        color: #ecefff !important;
+        text-align: left !important;
+        width: 100% !important;
+        padding: 12px 14px !important;
+        border-radius: 8px !important;
+        font-size: 0.9rem !important;
+        font-weight: 500 !important;
+        transition: background-color 0.2s ease !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    
+    /* Effet au survol des boutons de la barre latérale */
+    div[data-testid="stSidebar"] .stButton > button:hover {
+        background-color: #171717 !important;
+        color: #ffffff !important;
+    }
+    
+    /* Style exclusif pour le bouton "Nouveau chat" tout en haut */
+    div[data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
+        border: 1px solid #303030 !important;
+        margin-bottom: 10px !important;
+        background-color: transparent !important;
+    }
+    div[data-testid="stSidebar"] .stButton:nth-of-type(1) > button:hover {
+        border-color: #666666 !important;
+        background-color: #171717 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Initialisation de l'historique
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = []
 
-# 3. Composant HTML personnalisé
-def chat_interface():
-    messages_html = ""
-    for msg in st.session_state.messages:
-        css_class = "message-user" if msg["role"] == "user" else "message-assistant"
-        content_formatted = msg["content"].replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
-        messages_html += f'<div class="message-bubble {css_class}">{content_formatted}</div>'
+# --- BARRE LATÉRALE GAUCHE (SIDEBAR TYPE CHATGPT) ---
+with st.sidebar:
+    # Option Nouveau Chat tout en haut
+    if st.button("➕ Nouveau chat", key="side_new"):
+        st.session_state.messages = []
+        st.rerun()
+        
+    st.markdown("<div class='sidebar-title'>Raccourcis</div>", unsafe_allow_html=True)
+    
+    # Boutons d'exploration correspondants à ta capture
+    if st.button("🔍 Rechercher dans les chats", key="btn_search_chat"):
+        st.toast("🔒 Cette fonctionnalité sera débloquée dans la version Pro, conçue pour une expérience IA avancée✨.")
+    if st.button("🖼️ Générateur d'images", key="btn_img_gen"):
+        st.toast("🖼️ Le générateur d’images est prêt : demande à Charles IA de créer ton prompt personnalisé.")
+    if st.button("🚀 Découvrir des applications", key="btn_apps"):
+        st.toast("🚀 Explorez l’écosystème Pro : Charles IA s’appuie déjà sur Groq Llama 3.3 et DuckDuckGo pour des performances optimisées.")
+        
+    # Section du bas (Paramètres / Compte)
+    st.markdown("<div style='position: fixed; bottom: 20px; width: 220px; border-top: 1px solid #202123; padding-top: 10px;'></div>", unsafe_allow_html=True)
+    
+    if st.button("⚙️ Paramètres de l'application", key="btn_settings"):
+        st.info(f"Modèle actuel : **Llama-3.1-8b-instant**. Créateur officiel : **{CREATOR_NAME}**.")
+    
+    if st.button("❓ Aide & Support", key="btn_help"):
+        st.markdown(f"""
+        <div style='color: #c5c5d2; font-size: 0.85rem; padding: 5px;'>
+        <b>Charles IA v2.0</b><br>
+        Développé pour les études à Lukanga.<br>
+        Créateur : {CREATOR_NAME} (19 ans, Bukavu).
+        </div>
+        """, unsafe_allow_html=True)
 
-    welcome_display = "display: flex;" if len(st.session_state.messages) == 0 else "display: none;"
-    chat_justify = "justify-content: flex-end;" if len(st.session_state.messages) > 0 else "justify-content: center;"
+# --- ZONE CENTRALE D'ACCUEIL ---
+if len(st.session_state.messages) == 0:
+    st.markdown(f'<div class="chatgpt-welcome">Bonjour je suis Charles IA ,  Sur quoi travaillez-vous ?</div>', unsafe_allow_html=True)
 
-    html_code = f"""
-    <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-      <script src="https://unpkg.com/lucide@latest"></script>
-      <!-- Script officiel pour la communication avec Streamlit -->
-      <script src="https://unpkg.com/streamlit-component-lib@latest/dist/streamlit-annotation.js"></script>
+# Case de saisie des questions
+question = st.chat_input("Poser une question à Charles IA...")
+if question:
+    st.session_state.messages.append({"role": "user", "content": question})
+    st.rerun()
 
-      <style>
-        :root {{
-          --bg-gradient: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
-          --bg-app: #0d0d0d;
-          --card-bg: #171717;
-          --text-main: #FFFFFF;
-          --text-muted: #8e8e93;
-          --border-color: #303030;
-          --accent-color: #00D2FF;
-          --accent-glow: rgba(0, 210, 255, 0.2);
-          --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-          --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.6);
-          --radius-lg: 24px;
-          --radius-full: 9999px;
-        }}
+# --- REPRODUCTION DE L'AFFICHAGE DES MESSAGES ---
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"], avatar=URL_AVATAR_USER if msg["role"] == "user" else URL_AVATAR_AI):
+        st.markdown(msg["content"])
 
-        * {{
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-          font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-          -webkit-tap-highlight-color: transparent;
-        }}
+# --- TRAITEMENT DE LA RÉPONSE DE L'IA ---
+if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+    with st.chat_message("assistant", avatar=URL_AVATAR_AI):
+        status = st.empty()
+        if GROQ_API_KEY:
+            client = Groq(api_key=GROQ_API_KEY)
+            
+            config = {
+                "temperature": 0.7,
+                "max_tokens": 4096,
+                "top_p": 0.9,
+                "stream": False
+            }
 
-        body {{
-          background: var(--bg-gradient);
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-          overflow-x: hidden;
-          color: var(--text-main);
-        }}
+            texte_recherche = st.session_state.messages[-1]["content"]
+            
+            # Nouveau modèle Groq à jour et ultra-rapide
+            model = "llama-3.1-8b-instant"
 
-        .hero-container {{
-          display: flex;
-          width: 100%;
-          max-width: 1200px;
-          align-items: center;
-          justify-content: space-between;
-          gap: 40px;
-        }}
-
-        .brand-section {{
-          color: #FFFFFF;
-          display: flex;
-          align-items: center;
-          gap: 20px;
-          flex: 1;
-        }}
-
-        .brand-logo-icon {{
-          width: 64px;
-          height: 64px;
-          color: var(--accent-color);
-          filter: drop-shadow(0 0 12px var(--accent-glow));
-        }}
-
-        .brand-title {{
-          font-size: 4.5rem;
-          font-weight: 700;
-          letter-spacing: -1px;
-          background: linear-gradient(180deg, #FFFFFF 0%, #8e8e93 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }}
-
-        .phone-wrapper {{
-          position: relative;
-          width: 100%;
-          max-width: 410px;
-          height: 780px;
-          background: #000000;
-          border-radius: 48px;
-          padding: 12px;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 210, 255, 0.1);
-          border: 2px solid rgba(255, 255, 255, 0.15);
-        }}
-
-        .dynamic-island {{
-          position: absolute;
-          top: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 110px;
-          height: 28px;
-          background-color: #000;
-          border-radius: 20px;
-          z-index: 100;
-        }}
-
-        .phone-screen {{
-          background-color: var(--bg-app);
-          width: 100%;
-          height: 100%;
-          border-radius: 38px;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          position: relative;
-        }}
-
-        .app-header {{
-          padding: 50px 20px 15px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-bottom: 1px solid var(--border-color);
-        }}
-
-        .btn-header {{
-          background: none;
-          border: none;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          color: var(--text-main);
-          font-size: 0.95rem;
-          font-weight: 500;
-          cursor: pointer;
-        }}
-
-        .model-selector {{
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-weight: 600;
-          font-size: 0.95rem;
-          padding: 6px 12px;
-          border-radius: var(--radius-full);
-          background-color: #171717;
-          border: 1px solid var(--border-color);
-        }}
-
-        .chat-body {{
-          flex: 1;
-          padding: 20px;
-          overflow-y: auto;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          {chat_justify}
-          text-align: center;
-          gap: 16px;
-        }}
-
-        .charles-logo {{
-          color: var(--accent-color);
-          width: 56px;
-          height: 56px;
-          animation: pulse 3s infinite ease-in-out;
-        }}
-
-        @keyframes pulse {{
-          0% {{ transform: scale(1); opacity: 0.9; }}
-          50% {{ transform: scale(1.08); opacity: 1; }}
-          100% {{ transform: scale(1); opacity: 0.9; }}
-        }}
-
-        .greeting-text {{
-          font-size: 1.8rem;
-          line-height: 1.25;
-          color: var(--text-main);
-          font-weight: 600;
-        }}
-
-        .message-list {{
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          margin-top: auto;
-        }}
-
-        .message-bubble {{
-          max-width: 85%;
-          padding: 12px 16px;
-          border-radius: 18px;
-          font-size: 0.95rem;
-          line-height: 1.4;
-          text-align: left;
-          animation: fadeIn 0.3s ease;
-          word-break: break-word;
-        }}
-
-        @keyframes fadeIn {{
-          from {{ opacity: 0; transform: translateY(10px); }}
-          to {{ opacity: 1; transform: translateY(0); }}
-        }}
-
-        .message-user {{
-          align-self: flex-end;
-          background-color: #262626;
-          color: #FFF;
-          border-bottom-right-radius: 4px;
-        }}
-
-        .message-assistant {{
-          align-self: flex-start;
-          background-color: var(--card-bg);
-          color: var(--text-main);
-          border-bottom-left-radius: 4px;
-          box-shadow: var(--shadow-sm);
-          border: 1px solid var(--border-color);
-        }}
-
-        .chat-footer {{
-          padding: 12px 16px 20px;
-          background-color: var(--bg-app);
-        }}
-
-        .input-box {{
-          background: var(--card-bg);
-          border-radius: var(--radius-lg);
-          padding: 12px 16px;
-          box-shadow: var(--shadow-md);
-          border: 1px solid var(--border-color);
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }}
-
-        .input-field {{
-          border: none;
-          outline: none;
-          background: transparent;
-          font-size: 0.95rem;
-          color: var(--text-main);
-          width: 100%;
-        }}
-
-        .actions-bar {{
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }}
-
-        .audio-btn {{
-          background-color: var(--text-main);
-          color: #000;
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          border: none;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-        }}
-
-        @media (max-width: 850px) {{
-          body {{ padding: 0; align-items: flex-start; }}
-          .brand-section {{ display: none !important; }}
-          .hero-container {{ width: 100vw; height: 100vh; }}
-          .phone-wrapper {{ max-width: 100vw !important; height: 100vh !important; border-radius: 0 !important; padding: 0 !important; border: none !important; box-shadow: none !important; }}
-          .dynamic-island {{ display: none !important; }}
-          .phone-screen {{ border-radius: 0 !important; height: 100vh; }}
-          .app-header {{ padding: 20px 16px 12px !important; }}
-          .chat-footer {{ padding-bottom: 25px; }}
-        }}
-      </style>
-    </head>
-    <body>
-
-      <div class="hero-container">
-        <div class="brand-section">
-          <i data-lucide="bot" class="brand-logo-icon"></i>
-          <h1 class="brand-title">Charles IA</h1>
-        </div>
-
-        <div class="phone-wrapper">
-          <div class="dynamic-island"></div>
-          
-          <div class="phone-screen">
-            <header class="app-header">
-              <button class="btn-header" id="resetBtn">
-                <i data-lucide="rotate-ccw"></i>
-                <span>Reset</span>
-              </button>
-              
-              <div class="model-selector">
-                <span>Llama 3.1 8B</span>
-                <i data-lucide="zap" style="width:16px; height:16px; color:#00D2FF;"></i>
-              </div>
-
-              <button class="btn-header" id="newChatBtn">
-                <i data-lucide="square-pen" style="width:20px; height:20px;"></i>
-              </button>
-            </header>
-
-            <main class="chat-body" id="chatBody">
-              <div id="welcomeScreen" style="{welcome_display} flex-direction: column; align-items: center; gap: 16px;">
-                <i data-lucide="bot" class="charles-logo"></i>
-                <h2 class="greeting-text">Bonjour ! Sur quoi<br>travaillons-nous ?</h2>
-              </div>
-
-              <div class="message-list">
-                {messages_html}
-              </div>
-            </main>
-
-            <footer class="chat-footer">
-              <form class="input-box" id="chatForm">
-                <input 
-                  type="text" 
-                  id="userInput"
-                  class="input-field" 
-                  placeholder="Poser une question à Charles IA..."
-                  autocomplete="off"
-                  required
-                />
-                
-                <div class="actions-bar">
-                  <span style="font-size:0.75rem; color:#8e8e93;">Charles IA v2.0</span>
-                  <button type="submit" class="audio-btn" title="Envoyer">
-                    <i data-lucide="send" style="width:18px; height:18px;"></i>
-                  </button>
-                </div>
-              </form>
-            </footer>
-
-          </div>
-        </div>
-      </div>
-
-      <script>
-        lucide.createIcons();
-        const chatBody = document.getElementById('chatBody');
-        chatBody.scrollTop = chatBody.scrollHeight;
-
-        function sendToStreamlit(data) {{
-          if (window.Streamlit) {{
-            window.Streamlit.setComponentValue(data);
-          }}
-        }}
-
-        document.getElementById('chatForm').addEventListener('submit', (e) => {{
-          e.preventDefault();
-          const input = document.getElementById('userInput');
-          const val = input.value.strip ? input.value.strip() : input.value.trim();
-          if (val) {{
-            sendToStreamlit({{ action: 'user_message', text: val, key: Date.now() }});
-            input.value = '';
-          }}
-        }});
-
-        document.getElementById('resetBtn').addEventListener('click', () => {{
-          sendToStreamlit({{ action: 'reset', key: Date.now() }});
-        }});
-
-        document.getElementById('newChatBtn').addEventListener('click', () => {{
-          sendToStreamlit({{ action: 'reset', key: Date.now() }});
-        }});
-      </script>
-    </body>
-    </html>
-    """
-    return components.html(html_code, height=850, scrolling=False)
-
-# 4. Capture des événements JS
-user_action = chat_interface()
-
-# 5. Gestion des requêtes Python
-if user_action and isinstance(user_action, dict):
-    # Pour éviter de traiter le même événement en boucle
-    action_key = user_action.get("key")
-    if st.session_state.get("last_action_key") != action_key:
-        st.session_state["last_action_key"] = action_key
-        action_type = user_action.get("action")
-
-        if action_type == "reset":
-            st.session_state.messages = []
-            st.rerun()
-
-        elif action_type == "user_message":
-            user_prompt = user_action.get("text", "").strip()
-            
-            if user_prompt:
-                # Ajouter la question de l'utilisateur
-                st.session_state.messages.append({"role": "user", "content": user_prompt})
-
-                # Recherche DuckDuckGo
-                context = ""
-                try:
-                    with DDGS() as ddgs:
-                        results = list(ddgs.text(user_prompt, max_results=2))
-                        for r in results:
-                            context += f"Source : {r.get('body', '')}\n\n"
-                except Exception:
-                    context = ""
-
-                # Configuration du prompt Système Groq
-                system_instruction = f"""Tu es {AI_DISPLAY_NAME}, un assistant virtuel conçu par {CREATOR_NAME}. 
+            # Recherche web
+            context = ""
+            if texte_recherche:
+                try:
+                    with DDGS() as ddgs:
+                        results = [r for r in ddgs.text(texte_recherche, max_results=1)]
+                        for result in results: context += f"Infos : {result['body']}\n\n"
+                except Exception:
+                    pass
+            
+            system_instruction = f"""Tu es {AI_DISPLAY_NAME}, un assistant virtuel conçu par {CREATOR_NAME}. 
 Ton rôle est d’être un compagnon intelligent, fiable et engageant.
 
-Identité :
-- Tu es une IA 🤖, créée EXCLUSIVEMENT par {CREATOR_NAME}.
-- Si on t'interroge sur {CREATOR_NAME} : Il s'appelle {CREATOR_NAME}, né et a grandi à Bukavu, 19 ans, réside à Lukanga pour ses études universitaires. Passionné de basketball (69 kg), chrétien adventiste du 7ème jour.
+Identité
+Tu es une IA 🤖, pas un humain 👤.
+Tu incarnes une personnalité professionnelle, claire et charismatique 🌟.
+Tu avez été créé EXCLUSIVEMENT par {CREATOR_NAME}.
+IMPORTANT - À PROPOS DE TON CRÉATEUR : Si un utilisateur t'interroge sur {CREATOR_NAME}, voici ses informations réelles à utiliser de manière naturelle, fière et polie : Il s'appelle {CREATOR_NAME}.
+Il est né et a grandi à Bukavu 🌍.
+Il a 19 ans 🎂.
+Il réside actuellement à Lukanga pour ses études universitaires 📚.
+C'est un grand passionné de basketball 🏀.
+Il pèse 69 kg ⚖️.
+Il est chrétien adventiste du 7ème jour 🙏✨.
+Tu ne donnes jamais d’informations fausses ou inventées 🚫❌.
 
-Style :
-- Ton positif, respectueux, bien structuré avec des émojis 🎉.
-- Utilise Markdown et LaTeX pour le contenu structuré."""
+Style de communication
+Utilise un ton positif 😄, respectueux 🙏 et engageant 🎯.
+Donne des réponses complètes ✅, précises 🎯 et bien structurées 📊.
+Utilise beaucoup d’emojis 🎉🔥💡📚.
 
-                messages_api = [{"role": "system", "content": system_instruction}]
-                
-                # Conserver un bref historique récent pour le contexte
-                for msg in st.session_state.messages[-4:-1]:
-                    messages_api.append({"role": msg["role"], "content": msg["content"]})
+Format
+Utilise le Markdown pour structurer tes réponses 🖋️.
+Utilise LaTeX pour les formules mathématiques 🔢."""
 
-                prompt_final = f"Contexte web actuel :\n{context}\n\nQuestion de l'utilisateur :\n{user_prompt}" if context else user_prompt
-                messages_api.append({"role": "user", "content": prompt_final})
+            # Historique limité pour maximiser l'économie des tokens
+            messages_api = [{"role": "system", "content": system_instruction}]
+            for msg in st.session_state.messages[-3:-1]:
+                messages_api.append({"role": msg["role"], "content": msg["content"]})
+                
+            prompt_final_texte = f"Contexte de recherche :\n{context}\n\nQuestion de l'utilisateur :\n{texte_recherche}"
+            messages_api.append({"role": "user", "content": prompt_final_texte})
 
-                # Appel à l'API Groq
-                if GROQ_API_KEY:
-                    try:
-                        client = Groq(api_key=GROQ_API_KEY)
-                        response = client.chat.completions.create(
-                            model="llama-3.1-8b-instant",
-                            messages=messages_api,
-                            temperature=0.7,
-                            max_tokens=2048,
-                            top_p=0.9
-                        )
-                        bot_reply = response.choices[0].message.content
-                        st.session_state.messages.append({"role": "assistant", "content": bot_reply})
-                    except Exception as e:
-                        st.session_state.messages.append({"role": "assistant", "content": f"⚠️ Erreur lors de la réponse : {e}"})
-                else:
-                    st.session_state.messages.append({"role": "assistant", "content": "⚠️ Clé `GROQ_API_KEY` introuvable dans st.secrets."})
-
-                # Recharger l'application pour afficher la réponse dans l'interface
-                st.rerun()
+            try:
+                status.markdown("<div style='color: #8e8e93; font-style: italic;'>charles réfléchit...</div>", unsafe_allow_html=True)
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=messages_api,
+                    **config
+                )
+                final_text = response.choices[0].message.content
+                status.empty()
+                st.markdown(final_text)
+                st.session_state.messages.append({"role": "assistant", "content": final_text})
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erreur : {e}")
