@@ -10,9 +10,9 @@ GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 
 # Configuration de la page
 st.set_page_config(
-    page_title="Charles IA",
+    page_title="Charles IA - Interface",
     page_icon="🤖",
-    layout="wide",  # Requis pour la barre latérale type ChatGPT
+    layout="wide",
     initial_sidebar_state="expanded"
 )
 
@@ -22,144 +22,104 @@ AI_DISPLAY_NAME = "Charles IA"
 URL_AVATAR_AI = "avatar.jpg"
 URL_AVATAR_USER = "user"
 
-# --- INTERFACE CSS STYLE CHATGPT (SOMBRE ET PROFESSIONNEL) ---
+# --- INTERFACE HTML & CSS MODERNE (HERO + SMARTPHONE) ---
 st.markdown("""
-    <style>
-    /* Fond principal sombre */
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-        background-color: #0d0d0d !important;
-        color: #eceecf !important;
-        font-family: SANS-SERIF;
-    }
-    
-    /* Cacher le header Streamlit */
+  <!-- Google Fonts & Lucide Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Masquer les éléments natifs Streamlit inutiles pour une intégration fluide */
     [data-testid="stHeader"] { background-color: rgba(0,0,0,0); height: 0px; }
     footer { visibility: hidden; }
-    
-    /* Conteneur central restreint pour le chat */
-    .block-container {
-        max-width: 780px !important;
-        padding-top: 2rem !important;
-        padding-bottom: 7rem !important;
+    .block-container { padding-top: 1rem !important; padding-bottom: 2rem !important; }
+
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
+      --bg-app: #0d0d0d;
+      --card-bg: #171717;
+      --text-main: #FFFFFF;
+      --text-muted: #8e8e93;
+      --border-color: #303030;
+      --accent-color: #00D2FF;
+      --accent-glow: rgba(0, 210, 255, 0.2);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.6);
+      --radius-lg: 24px;
+      --radius-full: 9999px;
     }
-    
-    /* Style de la barre latérale gauche (Sidebar) */
-    [data-testid="stSidebar"], [data-testid="stSidebarNav"] {
-        background-color: #000000 !important;
-        border-right: 1px solid #202123 !important;
+
+    html, body, [data-testid="stAppViewContainer"] {
+      background: var(--bg-gradient) !important;
+      color: var(--text-main) !important;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif !important;
     }
-    
-    /* Titres et textes dans la sidebar */
-    .sidebar-title {
-        color: #666666;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 15px 12px 5px 12px;
-    }
-    
-    /* Message d'accueil central */
-    .chatgpt-welcome {
-        font-size: 2.1rem;
-        font-weight: 600;
-        color: #ffffff;
-        text-align: center;
-        margin-top: 15vh;
-        margin-bottom: 2.5rem;
-    }
-    
-    /* Zone des bulles de chat */
+
+    /* Styles pour la bulle de chat personnalisée */
     [data-testid="stChatMessage"] {
-        background-color: transparent !important;
-        padding: 1rem 0rem !important;
-        margin-bottom: 0.5rem !important;
-        border: none !important;
+      background-color: transparent !important;
+      padding: 0.5rem 0rem !important;
+      border: none !important;
     }
-    
-    /* Forcer le texte en blanc/gris clair lisible sur mobile et PC */
-    [data-testid="stChatMessage"] p, 
-    [data-testid="stChatMessage"] li, 
-    [data-testid="stChatMessage"] span,
-    [data-testid="stChatMessage"] div {
-        color: #e3e3e3 !important;
-        font-size: 1.05rem;
-        line-height: 1.6;
+
+    [data-testid="stChatMessage"] p {
+      color: #e3e3e3 !important;
+      font-size: 0.95rem;
+      line-height: 1.5;
     }
-    
-    /* Séparateur léger entre les messages */
-    [data-testid="stChatMessage"] {
-        border-bottom: 1px solid #212121 !important;
-    }
-    
-    /* Case de saisie flottante (Input) style ChatGPT */
+
+    /* Style du chat input */
     [data-testid="stChatInput"] {
-        background-color: #000000 !important;
-        border-radius: 24px !important;
-        border: 1px solid #303030 !important;
-        padding: 4px 8px !important;
+      background-color: #171717 !important;
+      border-radius: 24px !important;
+      border: 1px solid #303030 !important;
     }
-    
+
     [data-testid="stChatInput"] textarea {
-        color: #000000 !important;
-        background-color: transparent !important;
-        -webkit-text-fill-color: #0a0a0a !important;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
     }
-    
-    [data-testid="stChatInput"] textarea::placeholder {
-        color: #0a0a0a !important;
-        -webkit-text-fill-color: #8e8e93 !important;
+
+    /* Barre latérale sombre */
+    [data-testid="stSidebar"] {
+      background-color: #000000 !important;
+      border-right: 1px solid #202123 !important;
     }
-    
-    /* STYLE DES BOUTONS DE LA SIDEBAR (Look ChatGPT) */
-    div[data-testid="stSidebar"] .stButton > button {
-        background-color: transparent !important;
-        border: none !important;
-        color: #ecefff !important;
-        text-align: left !important;
-        width: 100% !important;
-        padding: 12px 14px !important;
-        border-radius: 8px !important;
-        font-size: 0.9rem !important;
-        font-weight: 500 !important;
-        transition: background-color 0.2s ease !important;
-        display: flex !important;
-        align-items: center !important;
+
+    .sidebar-title {
+      color: #666666;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 15px 12px 5px 12px;
     }
-    
-    /* Effet au survol des boutons de la barre latérale */
-    div[data-testid="stSidebar"] .stButton > button:hover {
-        background-color: #171717 !important;
-        color: #ffffff !important;
+
+    .chatgpt-welcome {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #ffffff;
+      text-align: center;
+      margin-top: 5vh;
+      margin-bottom: 2rem;
     }
-    
-    /* Style exclusif pour le bouton "Nouveau chat" tout en haut */
-    div[data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
-        border: 1px solid #303030 !important;
-        margin-bottom: 10px !important;
-        background-color: transparent !important;
-    }
-    div[data-testid="stSidebar"] .stButton:nth-of-type(1) > button:hover {
-        border-color: #666666 !important;
-        background-color: #171717 !important;
-    }
-    </style>
+  </style>
 """, unsafe_allow_html=True)
 
 # Initialisation de l'historique
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- BARRE LATÉRALE GAUCHE (SIDEBAR TYPE CHATGPT) ---
+# --- BARRE LATÉRALE GAUCHE ---
 with st.sidebar:
-    # Option Nouveau Chat tout en haut
     if st.button("➕ Nouveau chat", key="side_new"):
         st.session_state.messages = []
         st.rerun()
         
     st.markdown("<div class='sidebar-title'>Raccourcis</div>", unsafe_allow_html=True)
     
-    # Boutons d'exploration
     if st.button("🔍 Rechercher dans les chats", key="btn_search_chat"):
         st.toast("🔒 Cette fonctionnalité sera débloquée dans la version Pro, conçue pour une expérience IA avancée✨.")
     if st.button("🖼️ Générateur d'images", key="btn_img_gen"):
@@ -167,7 +127,6 @@ with st.sidebar:
     if st.button("🚀 Découvrir des applications", key="btn_apps"):
         st.toast("🚀 Explorez l’écosystème Pro : Charles IA s’appuie déjà sur Groq Llama 3.3 et DuckDuckGo pour des performances optimisées.")
         
-    # Section du bas (Paramètres / Compte)
     st.markdown("<div style='position: fixed; bottom: 20px; width: 220px; border-top: 1px solid #202123; padding-top: 10px;'></div>", unsafe_allow_html=True)
     
     if st.button("⚙️ Paramètres de l'application", key="btn_settings"):
@@ -182,9 +141,15 @@ with st.sidebar:
         </div>
         """, unsafe_allow_html=True)
 
-# --- ZONE CENTRALE D'ACCUEIL ---
+# --- EN-TÊTE ET ACCUEIL DE L'INTERFACE ---
 if len(st.session_state.messages) == 0:
-    st.markdown(f'<div class="chatgpt-welcome">Bonjour je suis Charles IA ,  Sur quoi travaillez-vous ?</div>', unsafe_allow_html=True)
+    st.markdown("""
+        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 20px; margin-bottom: 20px;">
+            <span style="font-size: 3rem;">🤖</span>
+            <h1 style="font-size: 3.5rem; font-weight: 700; background: linear-gradient(180deg, #FFFFFF 0%, #8e8e93 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0;">Charles IA</h1>
+        </div>
+        <div class="chatgpt-welcome">Bonjour ! Sur quoi travaillons-nous ?</div>
+    """, unsafe_allow_html=True)
 
 # Case de saisie des questions
 question = st.chat_input("Poser une question à Charles IA...")
@@ -192,7 +157,7 @@ if question:
     st.session_state.messages.append({"role": "user", "content": question})
     st.rerun()
 
-# --- REPRODUCTION DE L'AFFICHAGE DES MESSAGES ---
+# --- AFFICHAGE DES MESSAGES ---
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar=URL_AVATAR_USER if msg["role"] == "user" else URL_AVATAR_AI):
         st.markdown(msg["content"])
@@ -212,8 +177,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
             }
 
             texte_recherche = st.session_state.messages[-1]["content"]
-            
-            # Modèle Groq à jour et ultra-rapide
             model = "llama-3.1-8b-instant"
 
             # Recherche web
@@ -222,8 +185,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 try:
                     with DDGS() as ddgs:
                         results = [r for r in ddgs.text(texte_recherche, max_results=1)]
-                        for result in results: 
-                            context += f"Infos : {result['body']}\n\n"
+                        for result in results: context += f"Infos : {result['body']}\n\n"
                 except Exception:
                     pass
             
@@ -252,7 +214,6 @@ Format
 Utilise le Markdown pour structurer tes réponses 🖋️.
 Utilise LaTeX pour les formules mathématiques 🔢."""
 
-            # Historique limité pour maximiser l'économie des tokens
             messages_api = [{"role": "system", "content": system_instruction}]
             for msg in st.session_state.messages[-3:-1]:
                 messages_api.append({"role": msg["role"], "content": msg["content"]})
