@@ -1,14 +1,11 @@
 import streamlit as st
 import json
-from PIL import Image
 
 # Récupération de la clé API depuis secrets.toml
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
-logo_image = Image.open("iconcharlesia.jpg")
 
 st.set_page_config(
     page_title="Charles IA",
-    page_icon=logo_image,
     page_icon="🤖",
     layout="wide"
 )
