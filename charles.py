@@ -1,9 +1,7 @@
 import streamlit as st
 import json
-import urllib.request
-import urllib.error
 
-# Récupération de la clé API depuis secrets.toml ou vide par défaut
+# Récupération de la clé API depuis secrets.toml
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
 
 st.set_page_config(
@@ -12,57 +10,13 @@ st.set_page_config(
     layout="wide"
 )
 
-# Fonction backend pour répondre aux requêtes AJAX de l'interface HTML
-def query_groq(prompt):
-    if not GROQ_API_KEY:
-        return "Erreur : La clé API GROQ_API_KEY n'est pas configurée dans st.secrets."
-    
-    url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    system_instruction = """Tu es Charles IA, un assistant virtuel conçu par Charles Joseph. 
-Tu es une IA 🤖, pas un humain 👤.
-Tu incarnes une personnalité professionnelle, claire et charismatique 🌟.
-Tu as été créé EXCLUSIVEMENT par Charles Joseph.
-Si on te demande qui est ton créateur : Il s'appelle Charles Joseph, né et a grandi à Bukavu, 19 ans, réside à Lukanga pour ses études universitaires, passionné de basketball (69 kg), chrétien adventiste du 7ème jour.
-Réponds en français avec un ton positif, respectueux et dynamique avec des emojis."""
-
-    payload = {
-        "model": "llama-3.1-8b-instant",
-        "messages": [
-            {"role": "system", "content": system_instruction},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.7,
-        "max_tokens": 2048
-    }
-    
-    try:
-        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
-        with urllib.request.urlopen(req) as response:
-            res_data = json.loads(response.read().decode('utf-8'))
-            return res_data['choices'][0]['message']['content']
-    except Exception as e:
-        return f"Erreur de connexion à Groq : {str(e)}"
-
-# Gestion du relais d'API via Streamlit Query Params
-query_params = st.query_params
-if "api_prompt" in query_params:
-    user_prompt = query_params["api_prompt"]
-    answer = query_groq(user_prompt)
-    st.json({"response": answer})
-    st.stop()
-
-# --- CODE HTML / CSS / JS 100% FIDÈLE ---
+# --- CODE HTML / CSS / JS ADAPTATIF (RESPONSIVE) ---
 html_code = f"""
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Charles IA - Interface</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -104,6 +58,7 @@ html_code = f"""
       color: var(--text-main);
     }}
 
+    /* --- MODE DESKTOP / PC --- */
     .hero-container {{
       display: flex;
       width: 100%;
@@ -147,6 +102,7 @@ html_code = f"""
       padding: 12px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 210, 255, 0.1);
       border: 2px solid rgba(255, 255, 255, 0.15);
+      transition: all 0.3s ease;
     }}
 
     .dynamic-island {{
@@ -203,11 +159,6 @@ html_code = f"""
       border-radius: var(--radius-full);
       background-color: #171717;
       border: 1px solid var(--border-color);
-      transition: background 0.2s;
-    }}
-
-    .model-selector:hover {{
-      background-color: #222222;
     }}
 
     .chat-body {{
@@ -296,11 +247,6 @@ html_code = f"""
       display: flex;
       flex-direction: column;
       gap: 12px;
-      transition: border-color 0.2s;
-    }}
-
-    .input-box:focus-within {{
-      border-color: var(--accent-color);
     }}
 
     .input-field {{
@@ -339,12 +285,6 @@ html_code = f"""
       justify-content: center;
       padding: 6px;
       border-radius: 50%;
-      transition: all 0.2s;
-    }}
-
-    .icon-btn:hover {{
-      color: var(--text-main);
-      background-color: rgba(255,255,255,0.08);
     }}
 
     .audio-btn {{
@@ -358,24 +298,45 @@ html_code = f"""
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: transform 0.2s;
     }}
 
-    .audio-btn:hover {{
-      transform: scale(1.05);
-      background-color: #ECEFFF;
-    }}
+    /* --- ADAPTATION MOBILE (ÉCRANS < 768px) --- */
+    @media (max-width: 768px) {{
+      body {{
+        padding: 0;
+        background: var(--bg-app);
+      }}
 
-    @media (max-width: 850px) {{
       .hero-container {{
-        flex-direction: column;
         justify-content: center;
       }}
+
+      /* Cacher le grand titre du PC */
       .brand-section {{
-        margin-bottom: 20px;
+        display: none;
       }}
-      .brand-title {{
-        font-size: 3.2rem;
+
+      /* Le wrapper du téléphone prend tout l'écran mobile */
+      .phone-wrapper {{
+        max-width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        padding: 0;
+        border: none;
+        box-shadow: none;
+      }}
+
+      /* Supprimer l'encoche fictive sur vrai téléphone */
+      .dynamic-island {{
+        display: none;
+      }}
+
+      .phone-screen {{
+        border-radius: 0;
+      }}
+
+      .app-header {{
+        padding-top: 20px; /* Réduction du haut de page */
       }}
     }}
   </style>
@@ -520,5 +481,4 @@ html_code = f"""
 </html>
 """
 
-# Injection directe du HTML5 pur dans la page Streamlit
 st.components.v1.html(html_code, height=850, scrolling=True)
