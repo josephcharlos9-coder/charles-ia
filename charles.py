@@ -6,7 +6,7 @@ from groq import Groq
 # Récupération sécurisée de la clé API
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 
-# Configuration de la page
+# Configuration de la page Streamlit
 st.set_page_config(
     page_title="Charles IA",
     page_icon="🤖",
@@ -17,39 +17,42 @@ st.set_page_config(
 # --- CONFIGURATION DE L'IDENTITÉ ---
 CREATOR_NAME = "Charles Joseph"
 AI_DISPLAY_NAME = "Charles IA"
-URL_AVATAR_AI = "iconcharlesia.jpg"  # Rejoint les icônes texte si image locale introuvable
+URL_AVATAR_AI = "iconcharlesia.jpg"
 URL_AVATAR_USER = "👤"
 
-# --- INTERFACE CSS STYLE CHATGPT (SOMBRE ET PROFESSIONNEL) ---
+# --- INTERFACE CSS PERSONNALISÉE (DARK MODE CHARLES IA) ---
 st.markdown("""
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-    /* Fond principal sombre */
+    /* Fond principal sombre et typographie moderne */
     html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-        background-color: #0d0d0d !important;
-        color: #eceecf !important;
-        font-family: system-ui, -apple-system, sans-serif;
+        background: #0d0d0d !important;
+        color: #FFFFFF !important;
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
     }
     
-    /* Cacher le header Streamlit */
+    /* Masquer le header et footer natifs */
     [data-testid="stHeader"] { background-color: rgba(0,0,0,0); height: 0px; }
     footer { visibility: hidden; }
     
-    /* Conteneur central restreint pour le chat */
+    /* Conteneur central style chat */
     .block-container {
         max-width: 780px !important;
-        padding-top: 2rem !important;
+        padding-top: 1.5rem !important;
         padding-bottom: 7rem !important;
     }
     
-    /* Style de la barre latérale gauche (Sidebar) */
+    /* Sidebar noire avec bordures fines */
     [data-testid="stSidebar"], [data-testid="stSidebarNav"] {
         background-color: #000000 !important;
         border-right: 1px solid #202123 !important;
     }
     
-    /* Titres et textes dans la sidebar */
     .sidebar-title {
-        color: #666666;
+        color: #8e8e93;
         font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
@@ -57,39 +60,72 @@ st.markdown("""
         padding: 15px 12px 5px 12px;
     }
     
-    /* Message d'accueil central */
-    .chatgpt-welcome {
-        font-size: 2.1rem;
-        font-weight: 600;
-        color: #ffffff;
+    /* Titre d'accueil d'interface */
+    .charles-welcome-container {
         text-align: center;
-        margin-top: 15vh;
+        margin-top: 8vh;
         margin-bottom: 2.5rem;
     }
     
-    /* Zone des bulles de chat */
+    .charles-logo-glow {
+        font-size: 3.5rem;
+        display: inline-block;
+        filter: drop-shadow(0 0 15px rgba(0, 210, 255, 0.3));
+        animation: pulse 3s infinite ease-in-out;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+        100% { transform: scale(1); }
+    }
+    
+    .charles-welcome-title {
+        font-size: 2.1rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-top: 10px;
+        line-height: 1.3;
+    }
+
+    .model-badge {
+        display: inline-block;
+        background: #171717;
+        border: 1px solid #303030;
+        color: #00D2FF;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 8px;
+    }
+    
+    /* Zone des messages */
     [data-testid="stChatMessage"] {
         background-color: transparent !important;
         padding: 1rem 0rem !important;
-        margin-bottom: 0.5rem !important;
-        border-bottom: 1px solid #212121 !important;
+        border-bottom: 1px solid #1a1a1a !important;
     }
     
-    /* Couleur du texte des messages */
     [data-testid="stChatMessage"] p, 
     [data-testid="stChatMessage"] li, 
     [data-testid="stChatMessage"] span,
     [data-testid="stChatMessage"] div {
         color: #e3e3e3 !important;
-        font-size: 1.05rem;
+        font-size: 1.02rem;
         line-height: 1.6;
     }
     
-    /* Correctif du champ de saisie (ChatInput) */
+    /* Champ de saisie (ChatInput) */
     [data-testid="stChatInput"] {
-        background-color: #1e1e1e !important;
+        background-color: #171717 !important;
         border-radius: 24px !important;
         border: 1px solid #303030 !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    [data-testid="stChatInput"]:focus-within {
+        border-color: #00D2FF !important;
     }
     
     [data-testid="stChatInput"] textarea {
@@ -102,7 +138,7 @@ st.markdown("""
         -webkit-text-fill-color: #8e8e93 !important;
     }
     
-    /* Style des boutons de la sidebar */
+    /* Boutons Sidebar */
     div[data-testid="stSidebar"] .stButton > button {
         background-color: transparent !important;
         border: none !important;
@@ -121,13 +157,13 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* Bouton Nouveau chat */
+    /* Premier bouton : Nouveau chat */
     div[data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
         border: 1px solid #303030 !important;
         margin-bottom: 10px !important;
     }
     div[data-testid="stSidebar"] .stButton:nth-of-type(1) > button:hover {
-        border-color: #666666 !important;
+        border-color: #00D2FF !important;
         background-color: #171717 !important;
     }
     </style>
@@ -150,7 +186,7 @@ with st.sidebar:
     if st.button("🖼️ Générateur d'images", key="btn_img_gen"):
         st.toast("🖼️ Demande à Charles IA de créer un prompt d'image détaillé !")
     if st.button("🚀 Découvrir des applications", key="btn_apps"):
-        st.toast("🚀 Moteur actif : Groq (Llama 3.1) & DuckDuckGo Search.")
+        st.toast("🚀 Moteur actif : Groq (Llama 3.1 8B) & DuckDuckGo Search.")
         
     st.markdown("<div style='margin-top: 20px; border-top: 1px solid #202123; padding-top: 10px;'></div>", unsafe_allow_html=True)
     
@@ -168,7 +204,13 @@ with st.sidebar:
 
 # --- ZONE CENTRALE D'ACCUEIL ---
 if len(st.session_state.messages) == 0:
-    st.markdown(f'<div class="chatgpt-welcome">Bonjour, je suis Charles IA. Sur quoi travaillons-nous aujourd\'hui ?</div>', unsafe_allow_html=True)
+    st.markdown("""
+        <div class="charles-welcome-container">
+            <div class="charles-logo-glow">🤖</div>
+            <div class="charles-welcome-title">Bonjour ! Sur quoi<br>travaillons-nous aujourd'hui ?</div>
+            <div class="model-badge">⚡ Llama 3.1 8B Active</div>
+        </div>
+    """, unsafe_allow_html=True)
 
 # --- AFFICHAGE DES MESSAGES EXISTANTS ---
 for msg in st.session_state.messages:
@@ -180,7 +222,7 @@ for msg in st.session_state.messages:
 question = st.chat_input("Poser une question à Charles IA...")
 
 if question:
-    # 1. Ajouter et afficher immédiatement la question utilisateur
+    # 1. Ajouter et afficher le message utilisateur
     st.session_state.messages.append({"role": "user", "content": question})
     with st.chat_message("user", avatar=URL_AVATAR_USER):
         st.markdown(question)
@@ -194,7 +236,7 @@ if question:
             status = st.empty()
             status.markdown("<div style='color: #8e8e93; font-style: italic;'>Charles réfléchit...</div>", unsafe_allow_html=True)
 
-            # Recherche web (DuckDuckGo)
+            # Recherche Web (DuckDuckGo)
             context = ""
             try:
                 with DDGS() as ddgs:
@@ -215,7 +257,7 @@ Style :
 - Ton positif, respectueux, bien structuré avec des émojis 🎉.
 - Utilise Markdown et LaTeX si formule mathématique."""
 
-            # Historique de conversation léger (3 derniers messages)
+            # Historique limité
             messages_api = [{"role": "system", "content": system_instruction}]
             for msg in st.session_state.messages[-3:-1]:
                 messages_api.append({"role": msg["role"], "content": msg["content"]})
@@ -235,7 +277,7 @@ Style :
                 status.empty()
                 st.markdown(final_text)
                 
-                # Enregistrer le message dans la session (sans déclencher de st.rerun() inutile)
+                # Enregistrement du message
                 st.session_state.messages.append({"role": "assistant", "content": final_text})
             except Exception as e:
                 status.empty()
