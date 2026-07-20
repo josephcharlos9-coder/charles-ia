@@ -1,6 +1,4 @@
 import streamlit as st
-import random
-import urllib.request
 import time
 from duckduckgo_search import DDGS
 from groq import Groq
@@ -12,15 +10,15 @@ GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
 st.set_page_config(
     page_title="Charles IA",
     page_icon="🤖",
-    layout="wide",  # Requis pour la barre latérale type ChatGPT
+    layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # --- CONFIGURATION DE L'IDENTITÉ ---
 CREATOR_NAME = "Charles Joseph"
 AI_DISPLAY_NAME = "Charles IA"
-URL_AVATAR_AI = "avatar.jpg"
-URL_AVATAR_USER = "user"
+URL_AVATAR_AI = "🤖"  # Rejoint les icônes texte si image locale introuvable
+URL_AVATAR_USER = "👤"
 
 # --- INTERFACE CSS STYLE CHATGPT (SOMBRE ET PROFESSIONNEL) ---
 st.markdown("""
@@ -29,7 +27,7 @@ st.markdown("""
     html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
         background-color: #0d0d0d !important;
         color: #eceecf !important;
-        font-family: SANS-SERIF;
+        font-family: system-ui, -apple-system, sans-serif;
     }
     
     /* Cacher le header Streamlit */
@@ -74,10 +72,10 @@ st.markdown("""
         background-color: transparent !important;
         padding: 1rem 0rem !important;
         margin-bottom: 0.5rem !important;
-        border: none !important;
+        border-bottom: 1px solid #212121 !important;
     }
     
-    /* Forcer le texte en blanc/gris clair lisible sur mobile et PC */
+    /* Couleur du texte des messages */
     [data-testid="stChatMessage"] p, 
     [data-testid="stChatMessage"] li, 
     [data-testid="stChatMessage"] span,
@@ -87,31 +85,24 @@ st.markdown("""
         line-height: 1.6;
     }
     
-    /* Séparateur léger entre les messages */
-    [data-testid="stChatMessage"] {
-        border-bottom: 1px solid #212121 !important;
-    }
-    
-    /* Case de saisie flottante (Input) style ChatGPT */
+    /* Correctif du champ de saisie (ChatInput) */
     [data-testid="stChatInput"] {
-        background-color: #000000 !important;
+        background-color: #1e1e1e !important;
         border-radius: 24px !important;
         border: 1px solid #303030 !important;
-        padding: 4px 8px !important;
     }
     
     [data-testid="stChatInput"] textarea {
-        color: #000000 !important;
-        background-color: transparent !important;
-        -webkit-text-fill-color: #0a0a0a !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
     }
     
     [data-testid="stChatInput"] textarea::placeholder {
-        color: #0a0a0a !important;
+        color: #8e8e93 !important;
         -webkit-text-fill-color: #8e8e93 !important;
     }
     
-    /* STYLE DES BOUTONS DE LA SIDEBAR (Look ChatGPT) */
+    /* Style des boutons de la sidebar */
     div[data-testid="stSidebar"] .stButton > button {
         background-color: transparent !important;
         border: none !important;
@@ -123,21 +114,17 @@ st.markdown("""
         font-size: 0.9rem !important;
         font-weight: 500 !important;
         transition: background-color 0.2s ease !important;
-        display: flex !important;
-        align-items: center !important;
     }
     
-    /* Effet au survol des boutons de la barre latérale */
     div[data-testid="stSidebar"] .stButton > button:hover {
         background-color: #171717 !important;
         color: #ffffff !important;
     }
     
-    /* Style exclusif pour le bouton "Nouveau chat" tout en haut */
+    /* Bouton Nouveau chat */
     div[data-testid="stSidebar"] .stButton:nth-of-type(1) > button {
         border: 1px solid #303030 !important;
         margin-bottom: 10px !important;
-        background-color: transparent !important;
     }
     div[data-testid="stSidebar"] .stButton:nth-of-type(1) > button:hover {
         border-color: #666666 !important;
@@ -150,28 +137,25 @@ st.markdown("""
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- BARRE LATÉRALE GAUCHE (SIDEBAR TYPE CHATGPT) ---
+# --- BARRE LATÉRALE GAUCHE ---
 with st.sidebar:
-    # Option Nouveau Chat tout en haut
     if st.button("➕ Nouveau chat", key="side_new"):
         st.session_state.messages = []
         st.rerun()
         
     st.markdown("<div class='sidebar-title'>Raccourcis</div>", unsafe_allow_html=True)
     
-    # Boutons d'exploration correspondants à ta capture
     if st.button("🔍 Rechercher dans les chats", key="btn_search_chat"):
-        st.toast("🔒 Cette fonctionnalité sera débloquée dans la version Pro, conçue pour une expérience IA avancée✨.")
+        st.toast("🔒 Fonctionnalité bientôt disponible dans la version Pro✨.")
     if st.button("🖼️ Générateur d'images", key="btn_img_gen"):
-        st.toast("🖼️ Le générateur d’images est prêt : demande à Charles IA de créer ton prompt personnalisé.")
+        st.toast("🖼️ Demande à Charles IA de créer un prompt d'image détaillé !")
     if st.button("🚀 Découvrir des applications", key="btn_apps"):
-        st.toast("🚀 Explorez l’écosystème Pro : Charles IA s’appuie déjà sur Groq Llama 3.3 et DuckDuckGo pour des performances optimisées.")
+        st.toast("🚀 Moteur actif : Groq (Llama 3.1) & DuckDuckGo Search.")
         
-    # Section du bas (Paramètres / Compte)
-    st.markdown("<div style='position: fixed; bottom: 20px; width: 220px; border-top: 1px solid #202123; padding-top: 10px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 20px; border-top: 1px solid #202123; padding-top: 10px;'></div>", unsafe_allow_html=True)
     
-    if st.button("⚙️ Paramètres de l'application", key="btn_settings"):
-        st.info(f"Modèle actuel : **Llama-3.1-8b-instant**. Créateur officiel : **{CREATOR_NAME}**.")
+    if st.button("⚙️ Paramètres", key="btn_settings"):
+        st.info(f"Modèle actuel : **Llama-3.1-8b-instant**.\nCréateur : **{CREATOR_NAME}**.")
     
     if st.button("❓ Aide & Support", key="btn_help"):
         st.markdown(f"""
@@ -184,92 +168,75 @@ with st.sidebar:
 
 # --- ZONE CENTRALE D'ACCUEIL ---
 if len(st.session_state.messages) == 0:
-    st.markdown(f'<div class="chatgpt-welcome">Bonjour je suis Charles IA ,  Sur quoi travaillez-vous ?</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="chatgpt-welcome">Bonjour, je suis Charles IA. Sur quoi travaillons-nous aujourd\'hui ?</div>', unsafe_allow_html=True)
 
-# Case de saisie des questions
-question = st.chat_input("Poser une question à Charles IA...")
-if question:
-    st.session_state.messages.append({"role": "user", "content": question})
-    st.rerun()
-
-# --- REPRODUCTION DE L'AFFICHAGE DES MESSAGES ---
+# --- AFFICHAGE DES MESSAGES EXISTANTS ---
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"], avatar=URL_AVATAR_USER if msg["role"] == "user" else URL_AVATAR_AI):
+    avatar = URL_AVATAR_USER if msg["role"] == "user" else URL_AVATAR_AI
+    with st.chat_message(msg["role"], avatar=avatar):
         st.markdown(msg["content"])
 
-# --- TRAITEMENT DE LA RÉPONSE DE L'IA ---
-if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+# --- SOUMISSION DE NOUVELLE QUESTION ---
+question = st.chat_input("Poser une question à Charles IA...")
+
+if question:
+    # 1. Ajouter et afficher immédiatement la question utilisateur
+    st.session_state.messages.append({"role": "user", "content": question})
+    with st.chat_message("user", avatar=URL_AVATAR_USER):
+        st.markdown(question)
+
+    # 2. Générer et afficher la réponse de l'IA
     with st.chat_message("assistant", avatar=URL_AVATAR_AI):
-        status = st.empty()
-        if GROQ_API_KEY:
+        if not GROQ_API_KEY:
+            st.error("Clé API GROQ_API_KEY non trouvée dans st.secrets.")
+        else:
             client = Groq(api_key=GROQ_API_KEY)
-            
-            config = {
-                "temperature": 0.7,
-                "max_tokens": 4096,
-                "top_p": 0.9,
-                "stream": False
-            }
+            status = st.empty()
+            status.markdown("<div style='color: #8e8e93; font-style: italic;'>Charles réfléchit...</div>", unsafe_allow_html=True)
 
-            texte_recherche = st.session_state.messages[-1]["content"]
-            
-            # Nouveau modèle Groq à jour et ultra-rapide
-            model = "llama-3.1-8b-instant"
-
-            # Recherche web
+            # Recherche web (DuckDuckGo)
             context = ""
-            if texte_recherche:
-                try:
-                    with DDGS() as ddgs:
-                        results = [r for r in ddgs.text(texte_recherche, max_results=1)]
-                        for result in results: context += f"Infos : {result['body']}\n\n"
-                except Exception:
-                    pass
-            
+            try:
+                with DDGS() as ddgs:
+                    results = [r for r in ddgs.text(question, max_results=1)]
+                    for result in results:
+                        context += f"Infos : {result.get('body', '')}\n\n"
+            except Exception:
+                pass
+
             system_instruction = f"""Tu es {AI_DISPLAY_NAME}, un assistant virtuel conçu par {CREATOR_NAME}. 
 Ton rôle est d’être un compagnon intelligent, fiable et engageant.
 
-Identité
-Tu es une IA 🤖, pas un humain 👤.
-Tu incarnes une personnalité professionnelle, claire et charismatique 🌟.
-Tu avez été créé EXCLUSIVEMENT par {CREATOR_NAME}.
-IMPORTANT - À PROPOS DE TON CRÉATEUR : Si un utilisateur t'interroge sur {CREATOR_NAME}, voici ses informations réelles à utiliser de manière naturelle, fière et polie : Il s'appelle {CREATOR_NAME}.
-Il est né et a grandi à Bukavu 🌍.
-Il a 19 ans 🎂.
-Il réside actuellement à Lukanga pour ses études universitaires 📚.
-C'est un grand passionné de basketball 🏀.
-Il pèse 69 kg ⚖️.
-Il est chrétien adventiste du 7ème jour 🙏✨.
-Tu ne donnes jamais d’informations fausses ou inventées 🚫❌.
+Identité :
+- Tu es une IA 🤖, créée EXCLUSIVEMENT par {CREATOR_NAME}.
+- Si on t'interroge sur {CREATOR_NAME} : Il s'appelle {CREATOR_NAME}, né et a grandi à Bukavu, 19 ans, réside à Lukanga pour ses études universitaires. Passionné de basketball (69 kg), chrétien adventiste du 7ème jour.
 
-Style de communication
-Utilise un ton positif 😄, respectueux 🙏 et engageant 🎯.
-Donne des réponses complètes ✅, précises 🎯 et bien structurées 📊.
-Utilise beaucoup d’emojis 🎉🔥💡📚.
+Style :
+- Ton positif, respectueux, bien structuré avec des émojis 🎉.
+- Utilise Markdown et LaTeX si formule mathématique."""
 
-Format
-Utilise le Markdown pour structurer tes réponses 🖋️.
-Utilise LaTeX pour les formules mathématiques 🔢."""
-
-            # Historique limité pour maximiser l'économie des tokens
+            # Historique de conversation léger (3 derniers messages)
             messages_api = [{"role": "system", "content": system_instruction}]
             for msg in st.session_state.messages[-3:-1]:
                 messages_api.append({"role": msg["role"], "content": msg["content"]})
-                
-            prompt_final_texte = f"Contexte de recherche :\n{context}\n\nQuestion de l'utilisateur :\n{texte_recherche}"
-            messages_api.append({"role": "user", "content": prompt_final_texte})
+
+            prompt_final = f"Contexte de recherche :\n{context}\n\nQuestion de l'utilisateur :\n{question}"
+            messages_api.append({"role": "user", "content": prompt_final})
 
             try:
-                status.markdown("<div style='color: #8e8e93; font-style: italic;'>charles réfléchit...</div>", unsafe_allow_html=True)
                 response = client.chat.completions.create(
-                    model=model,
+                    model="llama-3.1-8b-instant",
                     messages=messages_api,
-                    **config
+                    temperature=0.7,
+                    max_tokens=4096,
+                    top_p=0.9
                 )
                 final_text = response.choices[0].message.content
                 status.empty()
                 st.markdown(final_text)
+                
+                # Enregistrer le message dans la session (sans déclencher de st.rerun() inutile)
                 st.session_state.messages.append({"role": "assistant", "content": final_text})
-                st.rerun()
             except Exception as e:
-                st.error(f"Erreur : {e}")
+                status.empty()
+                st.error(f"Erreur de connexion : {e}")
