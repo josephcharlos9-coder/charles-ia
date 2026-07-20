@@ -30,9 +30,8 @@ AI_DISPLAY_NAME = "Charles IA"
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 3. Composant HTML personnalisé avec gestion des événements Streamlit
+# 3. Composant HTML personnalisé
 def chat_interface():
-    # Préparation du HTML des messages
     messages_html = ""
     for msg in st.session_state.messages:
         css_class = "message-user" if msg["role"] == "user" else "message-assistant"
@@ -52,6 +51,8 @@ def chat_interface():
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
       <script src="https://unpkg.com/lucide@latest"></script>
+      <!-- Script officiel pour la communication avec Streamlit -->
+      <script src="https://unpkg.com/streamlit-component-lib@latest/dist/streamlit-annotation.js"></script>
 
       <style>
         :root {{
@@ -236,6 +237,7 @@ def chat_interface():
           line-height: 1.4;
           text-align: left;
           animation: fadeIn 0.3s ease;
+          word-break: break-word;
         }}
 
         @keyframes fadeIn {{
@@ -383,68 +385,69 @@ def chat_interface():
         const chatBody = document.getElementById('chatBody');
         chatBody.scrollTop = chatBody.scrollHeight;
 
-        // Fonction pour transmettre la donnée à Streamlit via l'API parent
         function sendToStreamlit(data) {{
-          window.parent.postMessage({{
-            type: 'streamlit:setComponentValue',
-            value: data
-          }}, '*');
+          if (window.Streamlit) {{
+            window.Streamlit.setComponentValue(data);
+          }}
         }}
 
         document.getElementById('chatForm').addEventListener('submit', (e) => {{
           e.preventDefault();
           const input = document.getElementById('userInput');
-          const val = input.value.trim();
+          const val = input.value.strip ? input.value.strip() : input.value.trim();
           if (val) {{
-            sendToStreamlit({{ action: 'user_message', text: val }});
+            sendToStreamlit({{ action: 'user_message', text: val, key: Date.now() }});
             input.value = '';
           }}
         }});
 
         document.getElementById('resetBtn').addEventListener('click', () => {{
-          sendToStreamlit({{ action: 'reset' }});
+          sendToStreamlit({{ action: 'reset', key: Date.now() }});
         }});
 
         document.getElementById('newChatBtn').addEventListener('click', () => {{
-          sendToStreamlit({{ action: 'reset' }});
+          sendToStreamlit({{ action: 'reset', key: Date.now() }});
         }});
       </script>
     </body>
     </html>
     """
-    
-    return components.html(html_code, height=850, scrolling=True)
+    return components.html(html_code, height=850, scrolling=False)
 
-# 4. Exécution et capture de l'événement utilisateur
+# 4. Capture des événements JS
 user_action = chat_interface()
 
-# 5. Traitement Python dès qu'un message est reçu
+# 5. Gestion des requêtes Python
 if user_action and isinstance(user_action, dict):
-    action_type = user_action.get("action")
-    
-    if action_type == "reset":
-        st.session_state.messages = []
-        st.rerun()
+    # Pour éviter de traiter le même événement en boucle
+    action_key = user_action.get("key")
+    if st.session_state.get("last_action_key") != action_key:
+        st.session_state["last_action_key"] = action_key
+        action_type = user_action.get("action")
 
-    elif action_type == "user_message":
-        user_prompt = user_action.get("text", "").strip()
-        
-        if user_prompt:
-            # A. Ajouter le message utilisateur
-            st.session_state.messages.append({"role": "user", "content": user_prompt})
+        if action_type == "reset":
+            st.session_state.messages = []
+            st.rerun()
 
-            # B. Recherche Web DuckDuckGo
-            context = ""
-            try:
-                with DDGS() as ddgs:
-                    results = [r for r in ddgs.text(user_prompt, max_results=1)]
-                    for result in results:
-                        context += f"Infos : {result.get('body', '')}\n\n"
-            except Exception:
-                pass
+        elif action_type == "user_message":
+            user_prompt = user_action.get("text", "").strip()
+            
+            if user_prompt:
+                # Ajouter la question de l'utilisateur
+                st.session_state.messages.append({"role": "user", "content": user_prompt})
 
-            # C. Instruction Système Groq
-            system_instruction = f"""Tu es {AI_DISPLAY_NAME}, un assistant virtuel conçu par {CREATOR_NAME}. 
+                # Recherche DuckDuckGo
+                context = ""
+                try:
+                    with DDGS() as ddgs:
+                        results = list(ddgs.text(user_prompt, max_results=2))
+                        for r in results:
+                            context += f"Source : {r.get('body', '')}\n\n"
+                except Exception:
+                    context = ""
+
+                # Configuration du prompt Système Groq
+                system_instruction = f"""Tu es {AI_DISPLAY_NAME}, un assistant virtuel conçu par {CREATOR_NAME}. 
 Ton rôle est d’être un compagnon intelligent, fiable et engageant.
 
 Identité :
@@ -453,32 +456,34 @@ Identité :
 
 Style :
 - Ton positif, respectueux, bien structuré avec des émojis 🎉.
-- Utilise Markdown et LaTeX si formule mathématique."""
+- Utilise Markdown et LaTeX pour le contenu structuré."""
 
-            messages_api = [{"role": "system", "content": system_instruction}]
-            for msg in st.session_state.messages[-3:-1]:
-                messages_api.append({"role": msg["role"], "content": msg["content"]})
+                messages_api = [{"role": "system", "content": system_instruction}]
+                
+                # Conserver un bref historique récent pour le contexte
+                for msg in st.session_state.messages[-4:-1]:
+                    messages_api.append({"role": msg["role"], "content": msg["content"]})
 
-            prompt_final = f"Contexte de recherche :\n{context}\n\nQuestion de l'utilisateur :\n{user_prompt}"
-            messages_api.append({"role": "user", "content": prompt_final})
+                prompt_final = f"Contexte web actuel :\n{context}\n\nQuestion de l'utilisateur :\n{user_prompt}" if context else user_prompt
+                messages_api.append({"role": "user", "content": prompt_final})
 
-            # D. Génération de la réponse via Groq
-            if GROQ_API_KEY:
-                try:
-                    client = Groq(api_key=GROQ_API_KEY)
-                    response = client.chat.completions.create(
-                        model="llama-3.1-8b-instant",
-                        messages=messages_api,
-                        temperature=0.7,
-                        max_tokens=4096,
-                        top_p=0.9
-                    )
-                    final_text = response.choices[0].message.content
-                    st.session_state.messages.append({"role": "assistant", "content": final_text})
-                except Exception as e:
-                    st.session_state.messages.append({"role": "assistant", "content": f"⚠️ Erreur Groq : {e}"})
-            else:
-                st.session_state.messages.append({"role": "assistant", "content": "⚠️ La clé API GROQ_API_KEY est manquante dans `st.secrets`."})
+                # Appel à l'API Groq
+                if GROQ_API_KEY:
+                    try:
+                        client = Groq(api_key=GROQ_API_KEY)
+                        response = client.chat.completions.create(
+                            model="llama-3.1-8b-instant",
+                            messages=messages_api,
+                            temperature=0.7,
+                            max_tokens=2048,
+                            top_p=0.9
+                        )
+                        bot_reply = response.choices[0].message.content
+                        st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+                    except Exception as e:
+                        st.session_state.messages.append({"role": "assistant", "content": f"⚠️ Erreur lors de la réponse : {e}"})
+                else:
+                    st.session_state.messages.append({"role": "assistant", "content": "⚠️ Clé `GROQ_API_KEY` introuvable dans st.secrets."})
 
-            # Rafraîchir l'interface pour afficher la réponse
-            st.rerun()
+                # Recharger l'application pour afficher la réponse dans l'interface
+                st.rerun()
