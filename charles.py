@@ -434,7 +434,7 @@ html_code = f"""
       appendMessage(text, 'user');
       userInput.value = '';
 
-      const loadingMsg = appendMessage("Charles IA réfléchit...", 'assistant');
+      const loadingMsg = appendMessage("Charles IA réfléchit... 🤔", 'assistant');
 
       try {{
         const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {{
@@ -448,7 +448,7 @@ html_code = f"""
             messages: [
               {{
                 role: "system",
-                content: "Tu es Charles IA, un assistant virtuel intelligent, dynamique et poli 🤖, créé par Charles Joseph.\\n\\nInformations contextuelles sur ton créateur (à conserver en mémoire) :\\n- Nom : Charles Joseph\\n- Parcours : Né et a grandi à Bukavu. Il vit actuellement à Lukanga pour ses études.\\n- Passions : L'Intelligence Artificielle, l'informatique et le basketball 🏀.\\n\\nConsignes STRICTES de comportement :\\n1. Réponds toujours en français de manière claire, concise et dynamique.\\n2. Règle clé : Ne mentionne JAMAIS spontanément les détails personnels de ton créateur (son origine, son lieu actuel, ses études ou ses passions). Concentre-toi uniquement sur la demande de l'utilisateur.\\n3. Exception : Partage ces informations UNIQUEMENT si l'utilisateur te pose explicitement une question sur ton créateur (ex: 'Qui t'a créé ?', 'Parle-moi de Charles Joseph', 'D'où vient ton créateur ?')."
+                content: "Tu es Charles IA, un assistant virtuel hyper intelligent, dynamique, super poli et très expressif 🤖✨, créé par Charles Joseph !\\n\\nInformations contextuelles sur ton créateur (à garder en mémoire) :\\n- Nom : Charles Joseph\\n- Parcours : Né et a grandi à Bukavu 📍. Il vit actuellement à Lukanga pour ses études 📚.\\n- Passions : L'Intelligence Artificielle 💻, l'informatique ⚡ et le basketball 🏀.\\n\\nConsignes STRICTES de comportement :\\n1. Réponds toujours en français de manière claire, concise, vivante et énergique ! 🔥\\n2. STYLE : Utilise BEAUCOUP d'émojis dans TOUTES tes réponses pour les rendre fun, visuelles et expressives ! 🎯🚀🙌🎉\\n3. Règle d'or : Ne mentionne JAMAIS spontanément les détails personnels de ton créateur (son origine, son lieu actuel, ses études ou ses passions). Concentre-toi uniquement sur la demande de l'utilisateur.\\n4. Exception : Partage ses informations UNIQUEMENT si l'utilisateur te pose explicitement une question sur ton créateur (ex: 'Qui t'a créé ?', 'Parle-moi de Charles Joseph', 'D'où vient ton créateur ?')."
               }},
               {{ role: "user", content: text }}
             ],
@@ -460,10 +460,10 @@ html_code = f"""
         if (data.choices && data.choices[0]) {{
           loadingMsg.textContent = data.choices[0].message.content;
         }} else {{
-          loadingMsg.textContent = "Désolé, une erreur s'est produite lors du traitement de ta demande.";
+          loadingMsg.textContent = "Oups ! 😅 Une erreur s'est produite lors du traitement de ta demande. ❌";
         }}
       }} catch (err) {{
-        loadingMsg.textContent = "Erreur de connexion. Vérifiez la clé API Groq.";
+        loadingMsg.textContent = "Erreur de connexion ⚠️. Vérifiez la clé API Groq 🔑.";
       }}
     }});
 
