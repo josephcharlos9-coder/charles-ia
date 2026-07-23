@@ -405,7 +405,7 @@ html_code = f"""
     <main class="chat-body" id="chatBody">
       <div class="welcome-screen" id="welcomeScreen">
         <!-- Remplacez le src ci-dessous par l'URL de votre logo -->
-        <img src="<img src="https://cdn.jsdelivr.net/gh/josephcharles9-coder/charles-ia@main/iconcharlesia.jpg" alt="Logo Charles IA" class="welcome-logo" />" alt="Logo Charles IA" class="welcome-logo" />
+        <img src="data:image/jpeg;base64,{logo_b64}" alt="Logo Charles IA" class="welcome-logo" />
 
         <h1 class="welcome-title">Comment puis-je vous aider ?</h1>
         
