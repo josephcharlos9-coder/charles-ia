@@ -1,11 +1,13 @@
-import streamlit as st
-import json
 import base64
+import json
+import streamlit as st
+
 
 # Fonction pour convertir une image locale en Base64
 def get_base64_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
+
 
 # Charge l'image locale (assurez-vous que iconcharlesia.jpg est dans le même dossier que streamlit_app.py)
 logo_b64 = get_base64_image("iconcharlesia.jpg")
@@ -16,10 +18,11 @@ st.set_page_config(
     page_title="Charles IA",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="collapsed",
 )
 
-st.markdown("""
+st.markdown(
+    """
     <style>
         html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
             background-color: #000000 !important;
@@ -37,7 +40,9 @@ st.markdown("""
             border: none !important;
         }
     </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 html_code = f"""
 <!DOCTYPE html>
@@ -404,7 +409,6 @@ html_code = f"""
 
     <main class="chat-body" id="chatBody">
       <div class="welcome-screen" id="welcomeScreen">
-        <!-- Remplacez le src ci-dessous par l'URL de votre logo -->
         <img src="data:image/jpeg;base64,{logo_b64}" alt="Logo Charles IA" class="welcome-logo" />
 
         <h1 class="welcome-title">Comment puis-je vous aider ?</h1>
@@ -438,7 +442,7 @@ html_code = f"""
           <p>Des conversations dynamiques avec Charles IA</p>
         </div>
       </div>
-      <button class="voice-launch-btn" onclick="alert('Module vocal actif ! 🎙️')">Lancer Voix</button>
+      <button class="voice-launch-btn" onclick="alert('Bientôt disponible charles-joseph is working on it ! 🎙️')">Lancer Voix</button>
     </div>
 
     <div class="input-container-wrapper">
@@ -486,6 +490,21 @@ html_code = f"""
     const bottomBanner = document.getElementById('bottomBanner');
 
     const apiKey = "{GROQ_API_KEY}";
+
+    // --- Défilement dynamique du placeholder toutes les 4 secondes ---
+    const placeholders = [
+      "Poser une question à Charles IA...",
+      "Demandez-moi d'écrire ou corriger du code 💻",
+      "Générez des idées créatives ✨",
+      "Posez une question sur n'importe quel sujet 🌐"
+    ];
+    let placeholderIndex = 0;
+
+    setInterval(() => {{
+      placeholderIndex = (placeholderIndex + 1) % placeholders.length;
+      userInput.placeholder = placeholders[placeholderIndex];
+    }}, 4000);
+    // -----------------------------------------------------------------
 
     userInput.addEventListener('input', function() {{
       this.style.height = 'auto';
