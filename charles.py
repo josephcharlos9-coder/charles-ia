@@ -154,10 +154,10 @@ html_code = f"""
     }}
 
     .welcome-logo {{
-      width: 64px;
-      height: 64px;
+      width: 130px;
+      height: 130px;
       object-fit: contain;
-      border-radius: 12px;
+      border-radius: 20px;
     }}
 
     .welcome-title {{
