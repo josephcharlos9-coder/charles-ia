@@ -1,5 +1,14 @@
 import streamlit as st
 import json
+import base64
+
+# Fonction pour convertir une image locale en Base64
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# Charge l'image locale (assurez-vous que iconcharlesia.jpg est dans le même dossier que streamlit_app.py)
+logo_b64 = get_base64_image("iconcharlesia.jpg")
 
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
 
