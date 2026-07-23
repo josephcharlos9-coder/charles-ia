@@ -1,37 +1,28 @@
 import streamlit as st
 import json
 
-# Récupération de la clé API depuis secrets.toml
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
 
-# Configuration de la page
 st.set_page_config(
-    page_title="Charles IA - Interface",
+    page_title="Charles IA",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# --- 1. SUPPRESSION TOTALE DES MARGES STREAMLIT ET ESPACES BLANCS ---
 st.markdown("""
     <style>
-        /* Fond global sombre pour éviter tout espace blanc */
         html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-            background-color: #0d0d0d !important;
+            background-color: #000000 !important;
             margin: 0 !important;
             padding: 0 !important;
         }
-        /* Cacher l'en-tête natif et le footer de Streamlit */
         [data-testid="stHeader"] { display: none !important; }
         footer { display: none !important; }
-        
-        /* Forcer le conteneur principal à coller en haut sans rembourrage */
         .block-container {
             padding: 0 !important;
             max-width: 100% !important;
         }
-        
-        /* Supprimer la marge de l'iframe */
         iframe {
             display: block;
             border: none !important;
@@ -39,14 +30,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. CODE HTML / CSS / JS ---
 html_code = f"""
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Charles IA - Interface</title>
+  <title>Charles IA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -54,16 +44,13 @@ html_code = f"""
 
   <style>
     :root {{
-      --bg-gradient: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
-      --bg-app: #0d0d0d;
-      --card-bg: #171717;
+      --bg-app: #000000;
+      --card-bg: #121212;
+      --input-bg: #1f1f1f;
       --text-main: #FFFFFF;
       --text-muted: #8e8e93;
-      --border-color: #303030;
-      --accent-color: #00D2FF;
-      --accent-glow: rgba(0, 210, 255, 0.2);
-      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-      --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.6);
+      --border-color: #2a2a2a;
+      --accent-color: #3b82f6;
       --radius-lg: 24px;
       --radius-full: 9999px;
     }}
@@ -78,236 +65,150 @@ html_code = f"""
 
     html, body {{
       background: var(--bg-app);
-      min-height: 100vh;
-      width: 100%;
-      overflow-x: hidden;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
       color: var(--text-main);
     }}
 
-    body {{
+    /* --- CONTeneUR PRINCIPAL (PC & MOBILE RESPONSIVE) --- */
+    .app-container {{
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      background-color: var(--bg-app);
+      position: relative;
+    }}
+
+    /* Top Navigation / Header minimaliste */
+    .app-header {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: transparent;
+      z-index: 10;
+    }}
+
+    .brand-logo {{
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }}
+
+    .header-actions {{
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }}
+
+    .header-btn {{
+      background: none;
+      border: none;
+      color: var(--text-main);
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 6px;
+      border-radius: 50%;
+      transition: background 0.2s;
     }}
 
-    /* --- DESKTOP (PC) --- */
-    .hero-container {{
-      display: flex;
-      width: 100%;
-      max-width: 1200px;
-      align-items: center;
-      justify-content: space-between;
-      gap: 40px;
-      padding: 20px;
+    .header-btn:hover {{
+      background-color: rgba(255, 255, 255, 0.1);
     }}
 
-    .brand-section {{
-      color: #FFFFFF;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      flex: 1;
-    }}
-
-    .brand-logo-icon {{
-      width: 64px;
-      height: 64px;
-      color: var(--accent-color);
-      filter: drop-shadow(0 0 12px var(--accent-glow));
-    }}
-
-    .brand-title {{
-      font-size: 4.5rem;
-      font-weight: 700;
-      letter-spacing: -1px;
-      background: linear-gradient(180deg, #FFFFFF 0%, #8e8e93 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }}
-
-    .phone-wrapper {{
-      position: relative;
-      width: 100%;
-      max-width: 410px;
-      height: 820px;
-      background: #000000;
-      border-radius: 48px;
-      padding: 12px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 210, 255, 0.1);
-      border: 2px solid rgba(255, 255, 255, 0.15);
-    }}
-
-    .dynamic-island {{
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 110px;
-      height: 28px;
-      background-color: #000;
-      border-radius: 20px;
-      z-index: 100;
-    }}
-
-    .phone-screen {{
-      background-color: var(--bg-app);
-      width: 100%;
-      height: 100%;
-      border-radius: 38px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }}
-
-    .app-header {{
-      padding: 50px 20px 15px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border-color);
-    }}
-
-    .btn-header {{
-      background: none;
-      border: none;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      color: var(--text-main);
-      font-size: 0.95rem;
-      font-weight: 500;
-      cursor: pointer;
-    }}
-
-    .model-selector {{
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      cursor: pointer;
-      padding: 6px 12px;
-      border-radius: var(--radius-full);
-      background-color: #171717;
-      border: 1px solid var(--border-color);
-    }}
-
+    /* Corps de discussion / Écran d'accueil centré */
     .chat-body {{
       flex: 1;
-      padding: 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding: 20px;
+      scroll-behavior: smooth;
+    }}
+
+    .welcome-screen {{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
+      margin: auto;
       text-align: center;
-      gap: 16px;
-    }}
-
-    .charles-logo {{
-      color: var(--accent-color);
-      width: 56px;
-      height: 56px;
-      animation: pulse 3s infinite ease-in-out;
-    }}
-
-    @keyframes pulse {{
-      0% {{ transform: scale(1); opacity: 0.9; }}
-      50% {{ transform: scale(1.08); opacity: 1; }}
-      100% {{ transform: scale(1); opacity: 0.9; }}
-    }}
-
-    .greeting-text {{
-      font-size: 1.8rem;
-      line-height: 1.25;
-      color: var(--text-main);
-      font-weight: 600;
-    }}
-
-    .message-list {{
+      gap: 24px;
+      max-width: 600px;
       width: 100%;
+    }}
+
+    .welcome-title {{
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }}
+
+    /* Boîte de saisie principale au centre (style PC de référence) ou en bas */
+    .input-container-wrapper {{
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      margin-top: auto;
     }}
 
-    .message-bubble {{
-      max-width: 85%;
-      padding: 12px 16px;
-      border-radius: 18px;
-      font-size: 0.95rem;
-      line-height: 1.4;
-      text-align: left;
-      animation: fadeIn 0.3s ease;
-      white-space: pre-wrap;
-    }}
-
-    @keyframes fadeIn {{
-      from {{ opacity: 0; transform: translateY(10px); }}
-      to {{ opacity: 1; transform: translateY(0); }}
-    }}
-
-    .message-user {{
-      align-self: flex-end;
-      background-color: #262626;
-      color: #FFF;
-      border-bottom-right-radius: 4px;
-    }}
-
-    .message-assistant {{
-      align-self: flex-start;
-      background-color: var(--card-bg);
-      color: var(--text-main);
-      border-bottom-left-radius: 4px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border-color);
-    }}
-
-    .chat-footer {{
-      padding: 12px 16px 20px;
-      background-color: var(--bg-app);
-    }}
-
-    .input-box {{
-      background: var(--card-bg);
+    .chat-form {{
+      background-color: var(--input-bg);
       border-radius: var(--radius-lg);
       padding: 12px 16px;
-      box-shadow: var(--shadow-md);
       border: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
       gap: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      transition: border-color 0.2s;
+    }}
+
+    .chat-form:focus-within {{
+      border-color: #555;
     }}
 
     .input-field {{
       border: none;
       outline: none;
       background: transparent;
-      font-size: 0.95rem;
+      font-size: 1rem;
       color: var(--text-main);
       width: 100%;
       resize: none;
+      max-height: 150px;
+      line-height: 1.4;
     }}
 
     .input-field::placeholder {{
       color: var(--text-muted);
     }}
 
-    .actions-bar {{
+    .form-actions {{
       display: flex;
       align-items: center;
       justify-content: space-between;
     }}
 
-    .tools-left {{
+    .actions-left, .actions-right {{
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
     }}
 
-    .icon-btn {{
+    .icon-action-btn {{
       background: none;
       border: none;
       color: var(--text-muted);
@@ -317,121 +218,253 @@ html_code = f"""
       justify-content: center;
       padding: 6px;
       border-radius: 50%;
+      transition: color 0.2s;
     }}
 
-    .audio-btn {{
+    .icon-action-btn:hover {{
+      color: var(--text-main);
+    }}
+
+    .send-btn {{
       background-color: var(--text-main);
       color: #000;
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       border: none;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      transition: transform 0.2s, opacity 0.2s;
     }}
 
-    /* --- ADAPTATION MOBILE (PHONE REAL SIZE) --- */
+    .send-btn:hover {{
+      transform: scale(1.05);
+    }}
+
+    /* Suggestions de démarrage (style puces) */
+    .suggestions-grid {{
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 4px;
+    }}
+
+    .suggestion-chip {{
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 10px 16px;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }}
+
+    .suggestion-chip:hover {{
+      background-color: var(--input-bg);
+    }}
+
+    /* Liste des messages */
+    .message-list {{
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 0 auto;
+      padding-bottom: 20px;
+    }}
+
+    .message-bubble {{
+      max-width: 85%;
+      padding: 14px 18px;
+      border-radius: 16px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      text-align: left;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }}
+
+    .message-user {{
+      align-self: flex-end;
+      background-color: #212121;
+      color: #FFFFFF;
+      border-bottom-right-radius: 4px;
+    }}
+
+    .message-assistant {{
+      align-self: flex-start;
+      background-color: transparent;
+      color: #FFFFFF;
+      padding-left: 0;
+    }}
+
+    /* Bannière bas de page style "Nouvelle Voix" */
+    .bottom-banner {{
+      max-width: 600px;
+      margin: 0 auto 12px auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: calc(100% - 32px);
+    }}
+
+    .banner-info {{
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }}
+
+    .banner-icon-box {{
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #9333ea);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }}
+
+    .banner-text h4 {{
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }}
+
+    .banner-text p {{
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }}
+
+    .voice-launch-btn {{
+      background-color: #262626;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+    }}
+
+    /* Ajustement Mobile strict */
     @media (max-width: 768px) {{
-      .hero-container {{
-        padding: 0;
-        justify-content: center;
-      }}
-
-      .brand-section {{
-        display: none;
-      }}
-
-      .phone-wrapper {{
-        max-width: 100vw;
-        height: 100vh;
-        border-radius: 0;
-        padding: 0;
-        border: none;
-        box-shadow: none;
-      }}
-
-      .dynamic-island {{
-        display: none;
-      }}
-
-      .phone-screen {{
-        border-radius: 0;
-      }}
-
       .app-header {{
-        padding-top: 15px; /* Évite de pousser le contenu trop bas */
+        padding: 12px 16px;
+      }}
+      .welcome-title {{
+        font-size: 1.6rem;
+      }}
+      .suggestions-grid {{
+        flex-direction: column;
+        width: 100%;
+      }}
+      .suggestion-chip {{
+        width: 100%;
+        justify-content: flex-start;
       }}
     }}
   </style>
 </head>
 <body>
 
-  <div class="hero-container">
-    <div class="brand-section">
-      <i data-lucide="bot" class="brand-logo-icon"></i>
-      <h1 class="brand-title">Charles IA</h1>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-logo" id="resetBtn">
+        <span>Charles IA</span>
+        <i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i>
+      </div>
+      <div class="header-actions">
+        <button class="header-btn" title="Nouvelle discussion">
+          <i data-lucide="square-pen" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Zone de discussion principale avec Scroll fluide -->
+    <main class="chat-body" id="chatBody">
+      <div class="welcome-screen" id="welcomeScreen">
+        <h1 class="welcome-title">Comment puis-je vous aider ?</h1>
+        
+        <div class="suggestions-grid">
+          <div class="suggestion-chip" onclick="selectPrompt('Créer une image')">
+            <i data-lucide="image" style="width: 18px; height: 18px; color: #3b82f6;"></i>
+            <span>Créer une image</span>
+          </div>
+          <div class="suggestion-chip" onclick="selectPrompt('Écrire ou modifier du code')">
+            <i data-lucide="pen-tool" style="width: 18px; height: 18px; color: #10b981;"></i>
+            <span>Écrire ou modifier</span>
+          </div>
+          <div class="suggestion-chip" onclick="selectPrompt('Faire une recherche intelligente')">
+            <i data-lucide="globe" style="width: 18px; height: 18px; color: #f59e0b;"></i>
+            <span>Faire une recherche</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="message-list" id="messageList"></div>
+    </main>
+
+    <!-- Bannière informative type Voix -->
+    <div class="bottom-banner" id="bottomBanner">
+      <div class="banner-info">
+        <div class="banner-icon-box">
+          <i data-lucide="headphones" style="width: 18px; height: 18px;"></i>
+        </div>
+        <div class="banner-text">
+          <h4>Découvrez la nouvelle Voix</h4>
+          <p>Des conversations dynamiques avec Charles IA</p>
+        </div>
+      </div>
+      <button class="voice-launch-btn" onclick="alert('Module vocal actif ! 🎙️')">Lancer Voix</button>
     </div>
 
-    <div class="phone-wrapper">
-      <div class="dynamic-island"></div>
-      <div class="phone-screen">
-        <header class="app-header">
-          <button class="btn-header">
-            <i data-lucide="chevron-left"></i>
-            <span>Retour</span>
-          </button>
-          <div class="model-selector">
-            <span>Llama 3.1 8B</span>
-            <i data-lucide="chevron-down" style="width:16px; height:16px;"></i>
+    <!-- Formulaire d'envoi en bas -->
+    <div class="input-container-wrapper">
+      <form class="chat-form" id="chatForm">
+        <textarea
+          class="input-field"
+          id="userInput"
+          rows="1"
+          placeholder="Poser une question à Charles IA..."
+          autocomplete="off"
+        ></textarea>
+        <div class="form-actions">
+          <div class="actions-left">
+            <button type="button" class="icon-action-btn" title="Ajouter un fichier">
+              <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
+            </button>
+            <button type="button" class="icon-action-btn" title="Paramètres">
+              <i data-lucide="sliders-horizontal" style="width: 18px; height: 18px;"></i>
+            </button>
+            <button type="button" class="icon-action-btn" title="Recherche Web">
+              <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+            </button>
           </div>
-          <button class="btn-header">
-            <i data-lucide="square-pen" style="width:20px; height:20px;"></i>
-          </button>
-        </header>
-
-        <main class="chat-body" id="chatBody">
-          <div id="welcomeScreen" style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
-            <i data-lucide="bot" class="charles-logo"></i>
-            <h2 class="greeting-text">Bonjour ! Sur quoi<br>travaillons-nous ?</h2>
+          <div class="actions-right">
+            <button type="button" class="icon-action-btn" title="Mode vocal">
+              <i data-lucide="mic" style="width: 18px; height: 18px;"></i>
+            </button>
+            <button type="submit" class="send-btn" title="Envoyer">
+              <i data-lucide="arrow-up" style="width: 18px; height: 18px;"></i>
+            </button>
           </div>
-          <div class="message-list" id="messageList"></div>
-        </main>
-
-        <footer class="chat-footer">
-          <form class="input-box" id="chatForm">
-            <input
-              type="text"
-              class="input-field"
-              id="userInput"
-              placeholder="Poser une question à Charles IA..."
-              autocomplete="off"
-            />
-            <div class="actions-bar">
-              <div class="tools-left">
-                <button type="button" class="icon-btn" title="Ajouter un fichier">
-                  <i data-lucide="plus" style="width:20px; height:20px;"></i>
-                </button>
-                <button type="button" class="icon-btn" title="Paramètres">
-                  <i data-lucide="sliders-horizontal" style="width:18px; height:18px;"></i>
-                </button>
-                <button type="button" class="icon-btn" title="Recherche Web">
-                  <i data-lucide="search" style="width:18px; height:18px;"></i>
-                </button>
-              </div>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <button type="button" class="icon-btn" title="Entrée vocale">
-                  <i data-lucide="mic" style="width:20px; height:20px;"></i>
-                </button>
-                <button type="submit" class="audio-btn" title="Envoyer">
-                  <i data-lucide="send" style="width:18px; height:18px;"></i>
-                </button>
-              </div>
-            </div>
-          </form>
-        </footer>
-      </div>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -443,8 +476,27 @@ html_code = f"""
     const messageList = document.getElementById('messageList');
     const welcomeScreen = document.getElementById('welcomeScreen');
     const chatBody = document.getElementById('chatBody');
+    const bottomBanner = document.getElementById('bottomBanner');
+    const resetBtn = document.getElementById('resetBtn');
 
     const apiKey = "{GROQ_API_KEY}";
+
+    // Ajustement automatique de la hauteur du textarea de saisie
+    userInput.addEventListener('input', function() {{
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
+    }});
+
+    function selectPrompt(text) {{
+      userInput.value = text;
+      userInput.focus();
+    }}
+
+    resetBtn.addEventListener('click', () => {{
+      messageList.innerHTML = '';
+      welcomeScreen.style.display = 'flex';
+      bottomBanner.style.display = 'flex';
+    }});
 
     chatForm.addEventListener('submit', async (e) => {{
       e.preventDefault();
@@ -453,11 +505,12 @@ html_code = f"""
 
       if (welcomeScreen.style.display !== 'none') {{
         welcomeScreen.style.display = 'none';
-        chatBody.style.justifyContent = 'flex-end';
+        bottomBanner.style.display = 'none';
       }}
 
       appendMessage(text, 'user');
       userInput.value = '';
+      userInput.style.height = 'auto';
 
       const loadingMsg = appendMessage("Charles IA réfléchit...", 'assistant');
 
@@ -473,7 +526,7 @@ html_code = f"""
             messages: [
               {{
                 role: "system",
-                content: "Tu es Charles IA, créé par Charles Joseph. Tu es une IA 🤖 intelligente, dynamique et polie. Ton créateur a 19 ans, habite Bukavu/Lukanga, aime le basket. Réponds en français."
+                content: "Tu es Charles IA, un assistant virtuel professionnel et charismatique, créé par Charles Joseph. Tu t'adresses directement à ton créateur Charles Joseph (19 ans, réside à Lukanga/Bukavu, passionné de basketball, chrétien adventiste). Utilise toujours des emojis pour dynamiser tes réponses, sois poli, élégant et précis."
               }},
               {{ role: "user", content: text }}
             ],
@@ -485,10 +538,10 @@ html_code = f"""
         if (data.choices && data.choices[0]) {{
           loadingMsg.textContent = data.choices[0].message.content;
         }} else {{
-          loadingMsg.textContent = "Désolé, une erreur s'est produite lors du traitement de ta demande.";
+          loadingMsg.textContent = "Désolé, une petite erreur est survenue lors de la génération. 🤖";
         }}
       }} catch (err) {{
-        loadingMsg.textContent = "Erreur de connexion. Vérifiez la clé API Groq.";
+        loadingMsg.textContent = "Erreur de connexion avec l'API Groq. Vérifie ta configuration ! ⚠️";
       }}
     }});
 
@@ -506,5 +559,4 @@ html_code = f"""
 </html>
 """
 
-# Insertion de l'interface en plein écran sans bordures
 st.components.v1.html(html_code, height=900, scrolling=False)
