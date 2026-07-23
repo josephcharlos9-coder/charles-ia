@@ -34,6 +34,16 @@ st.markdown(
         }
         [data-testid="stHeader"] { display: none !important; }
         footer { display: none !important; }
+        
+        /* Cacher le badge / filigrane Streamlit Cloud */
+        .viewerBadge_container__1QSob, 
+        [data-testid="stStatusWidget"],
+        .styles_viewerBadge__CvC1N,
+        #stDecoration,
+        [data-testid="stDecoration"] { 
+            display: none !important; 
+        }
+
         .block-container {
             padding: 0 !important;
             max-width: 100% !important;
@@ -179,6 +189,7 @@ html_code = f"""
       max-width: 720px;
       margin: 0 auto;
       padding: 16px;
+      padding-bottom: 35px; /* Surélève le formulaire pour éviter les superpositions sur mobile */
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -494,7 +505,7 @@ html_code = f"""
 
     const apiKey = "{GROQ_API_KEY}";
 
-    // --- Défilement dynamique du placeholder (avec virgules corrigées) ---
+    // --- Défilement dynamique du placeholder ---
     const placeholders = [
       "💻 Coder avec Charles IA",
       "🛠️ Corrige ton code facilement",
