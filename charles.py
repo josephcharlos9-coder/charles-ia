@@ -4,13 +4,42 @@ import json
 # Récupération de la clé API depuis secrets.toml
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
 
+# Configuration de la page
 st.set_page_config(
     page_title="Charles IA - Interface",
     page_icon="🤖",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-# --- CODE HTML / CSS / JS ADAPTATIF CORRIGÉ ---
+# --- 1. SUPPRESSION TOTALE DES MARGES STREAMLIT ET ESPACES BLANCS ---
+st.markdown("""
+    <style>
+        /* Fond global sombre pour éviter tout espace blanc */
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+            background-color: #0d0d0d !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        /* Cacher l'en-tête natif et le footer de Streamlit */
+        [data-testid="stHeader"] { display: none !important; }
+        footer { display: none !important; }
+        
+        /* Forcer le conteneur principal à coller en haut sans rembourrage */
+        .block-container {
+            padding: 0 !important;
+            max-width: 100% !important;
+        }
+        
+        /* Supprimer la marge de l'iframe */
+        iframe {
+            display: block;
+            border: none !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- 2. CODE HTML / CSS / JS ---
 html_code = f"""
 <!DOCTYPE html>
 <html lang="fr">
@@ -47,17 +76,21 @@ html_code = f"""
       -webkit-tap-highlight-color: transparent;
     }}
 
-    body {{
-      background: var(--bg-gradient);
+    html, body {{
+      background: var(--bg-app);
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      width: 100%;
       overflow-x: hidden;
       color: var(--text-main);
     }}
 
+    body {{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }}
+
+    /* --- DESKTOP (PC) --- */
     .hero-container {{
       display: flex;
       width: 100%;
@@ -65,6 +98,7 @@ html_code = f"""
       align-items: center;
       justify-content: space-between;
       gap: 40px;
+      padding: 20px;
     }}
 
     .brand-section {{
@@ -95,7 +129,7 @@ html_code = f"""
       position: relative;
       width: 100%;
       max-width: 410px;
-      height: 780px;
+      height: 820px;
       background: #000000;
       border-radius: 48px;
       padding: 12px;
@@ -132,7 +166,6 @@ html_code = f"""
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border-color);
-      flex-shrink: 0;
     }}
 
     .btn-header {{
@@ -160,15 +193,16 @@ html_code = f"""
       border: 1px solid var(--border-color);
     }}
 
-    /* --- GESTION DU DEFILEMENT DES MESSAGES --- */
     .chat-body {{
       flex: 1;
       padding: 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
       gap: 16px;
-      scroll-behavior: smooth;
     }}
 
     .charles-logo {{
@@ -189,7 +223,6 @@ html_code = f"""
       line-height: 1.25;
       color: var(--text-main);
       font-weight: 600;
-      text-align: center;
     }}
 
     .message-list {{
@@ -197,18 +230,18 @@ html_code = f"""
       display: flex;
       flex-direction: column;
       gap: 12px;
+      margin-top: auto;
     }}
 
     .message-bubble {{
-      max-width: 90%;
+      max-width: 85%;
       padding: 12px 16px;
       border-radius: 18px;
       font-size: 0.95rem;
-      line-height: 1.5;
+      line-height: 1.4;
       text-align: left;
       animation: fadeIn 0.3s ease;
       white-space: pre-wrap;
-      word-break: break-word;
     }}
 
     @keyframes fadeIn {{
@@ -235,7 +268,6 @@ html_code = f"""
     .chat-footer {{
       padding: 12px 16px 20px;
       background-color: var(--bg-app);
-      flex-shrink: 0;
     }}
 
     .input-box {{
@@ -300,13 +332,10 @@ html_code = f"""
       cursor: pointer;
     }}
 
+    /* --- ADAPTATION MOBILE (PHONE REAL SIZE) --- */
     @media (max-width: 768px) {{
-      body {{
-        padding: 0;
-        background: var(--bg-app);
-      }}
-
       .hero-container {{
+        padding: 0;
         justify-content: center;
       }}
 
@@ -332,7 +361,7 @@ html_code = f"""
       }}
 
       .app-header {{
-        padding-top: 20px;
+        padding-top: 15px; /* Évite de pousser le contenu trop bas */
       }}
     }}
   </style>
@@ -363,7 +392,7 @@ html_code = f"""
         </header>
 
         <main class="chat-body" id="chatBody">
-          <div id="welcomeScreen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100%; gap: 16px;">
+          <div id="welcomeScreen" style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
             <i data-lucide="bot" class="charles-logo"></i>
             <h2 class="greeting-text">Bonjour ! Sur quoi<br>travaillons-nous ?</h2>
           </div>
@@ -424,6 +453,7 @@ html_code = f"""
 
       if (welcomeScreen.style.display !== 'none') {{
         welcomeScreen.style.display = 'none';
+        chatBody.style.justifyContent = 'flex-end';
       }}
 
       appendMessage(text, 'user');
@@ -460,8 +490,6 @@ html_code = f"""
       }} catch (err) {{
         loadingMsg.textContent = "Erreur de connexion. Vérifiez la clé API Groq.";
       }}
-      
-      chatBody.scrollTop = chatBody.scrollHeight;
     }});
 
     function appendMessage(text, sender) {{
@@ -478,4 +506,5 @@ html_code = f"""
 </html>
 """
 
-st.components.v1.html(html_code, height=850, scrolling=True)
+# Insertion de l'interface en plein écran sans bordures
+st.components.v1.html(html_code, height=900, scrolling=False)
