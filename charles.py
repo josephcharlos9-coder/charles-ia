@@ -144,6 +144,13 @@ html_code = f"""
       width: 100%;
     }}
 
+    .welcome-logo {{
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      border-radius: 12px;
+    }}
+
     .welcome-title {{
       font-size: 2rem;
       font-weight: 600;
@@ -388,6 +395,9 @@ html_code = f"""
 
     <main class="chat-body" id="chatBody">
       <div class="welcome-screen" id="welcomeScreen">
+        <!-- Remplacez le src ci-dessous par l'URL de votre logo -->
+        <img src="https://votre-lien-image.com/logo.png" alt="Logo Charles IA" class="welcome-logo" />
+
         <h1 class="welcome-title">Comment puis-je vous aider ?</h1>
         
         <div class="suggestions-grid">
