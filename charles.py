@@ -5,12 +5,12 @@ import json
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
 
 st.set_page_config(
-    page_title="Charles IA",
+    page_title="Charles IA - Interface",
     page_icon="🤖",
     layout="wide"
 )
 
-# --- CODE HTML / CSS / JS ADAPTATIF (RESPONSIVE) ---
+# --- CODE HTML / CSS / JS ADAPTATIF CORRIGÉ ---
 html_code = f"""
 <!DOCTYPE html>
 <html lang="fr">
@@ -58,7 +58,6 @@ html_code = f"""
       color: var(--text-main);
     }}
 
-    /* --- MODE DESKTOP / PC --- */
     .hero-container {{
       display: flex;
       width: 100%;
@@ -102,7 +101,6 @@ html_code = f"""
       padding: 12px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 210, 255, 0.1);
       border: 2px solid rgba(255, 255, 255, 0.15);
-      transition: all 0.3s ease;
     }}
 
     .dynamic-island {{
@@ -134,6 +132,7 @@ html_code = f"""
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
     }}
 
     .btn-header {{
@@ -161,16 +160,15 @@ html_code = f"""
       border: 1px solid var(--border-color);
     }}
 
+    /* --- GESTION DU DEFILEMENT DES MESSAGES --- */
     .chat-body {{
       flex: 1;
       padding: 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
       gap: 16px;
+      scroll-behavior: smooth;
     }}
 
     .charles-logo {{
@@ -191,6 +189,7 @@ html_code = f"""
       line-height: 1.25;
       color: var(--text-main);
       font-weight: 600;
+      text-align: center;
     }}
 
     .message-list {{
@@ -198,18 +197,18 @@ html_code = f"""
       display: flex;
       flex-direction: column;
       gap: 12px;
-      margin-top: auto;
     }}
 
     .message-bubble {{
-      max-width: 85%;
+      max-width: 90%;
       padding: 12px 16px;
       border-radius: 18px;
       font-size: 0.95rem;
-      line-height: 1.4;
+      line-height: 1.5;
       text-align: left;
       animation: fadeIn 0.3s ease;
       white-space: pre-wrap;
+      word-break: break-word;
     }}
 
     @keyframes fadeIn {{
@@ -236,6 +235,7 @@ html_code = f"""
     .chat-footer {{
       padding: 12px 16px 20px;
       background-color: var(--bg-app);
+      flex-shrink: 0;
     }}
 
     .input-box {{
@@ -300,7 +300,6 @@ html_code = f"""
       cursor: pointer;
     }}
 
-    /* --- ADAPTATION MOBILE (ÉCRANS < 768px) --- */
     @media (max-width: 768px) {{
       body {{
         padding: 0;
@@ -311,12 +310,10 @@ html_code = f"""
         justify-content: center;
       }}
 
-      /* Cacher le grand titre du PC */
       .brand-section {{
         display: none;
       }}
 
-      /* Le wrapper du téléphone prend tout l'écran mobile */
       .phone-wrapper {{
         max-width: 100vw;
         height: 100vh;
@@ -326,7 +323,6 @@ html_code = f"""
         box-shadow: none;
       }}
 
-      /* Supprimer l'encoche fictive sur vrai téléphone */
       .dynamic-island {{
         display: none;
       }}
@@ -336,7 +332,7 @@ html_code = f"""
       }}
 
       .app-header {{
-        padding-top: 20px; /* Réduction du haut de page */
+        padding-top: 20px;
       }}
     }}
   </style>
@@ -367,7 +363,7 @@ html_code = f"""
         </header>
 
         <main class="chat-body" id="chatBody">
-          <div id="welcomeScreen" style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+          <div id="welcomeScreen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100%; gap: 16px;">
             <i data-lucide="bot" class="charles-logo"></i>
             <h2 class="greeting-text">Bonjour ! Sur quoi<br>travaillons-nous ?</h2>
           </div>
@@ -428,13 +424,12 @@ html_code = f"""
 
       if (welcomeScreen.style.display !== 'none') {{
         welcomeScreen.style.display = 'none';
-        chatBody.style.justifyContent = 'flex-end';
       }}
 
       appendMessage(text, 'user');
       userInput.value = '';
 
-      const loadingMsg = appendMessage("Charles IA réfléchit... 🤔", 'assistant');
+      const loadingMsg = appendMessage("Charles IA réfléchit...", 'assistant');
 
       try {{
         const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {{
@@ -448,7 +443,7 @@ html_code = f"""
             messages: [
               {{
                 role: "system",
-                content: "Tu es Charles IA, un assistant virtuel hyper intelligent, dynamique, super poli et très expressif 🤖✨, créé par Charles Joseph !\\n\\nInformations contextuelles sur ton créateur (à garder en mémoire) :\\n- Nom : Charles Joseph\\n- Parcours : Né et a grandi à Bukavu 📍. Il vit actuellement à Lukanga pour ses études 📚.\\n- Passions : L'Intelligence Artificielle 💻, l'informatique ⚡ et le basketball 🏀.\\n\\nConsignes STRICTES de comportement :\\n1. Réponds toujours en français de manière claire, concise, vivante et énergique ! 🔥\\n2. STYLE : Utilise BEAUCOUP d'émojis dans TOUTES tes réponses pour les rendre fun, visuelles et expressives ! 🎯🚀🙌🎉\\n3. Règle d'or : Ne mentionne JAMAIS spontanément les détails personnels de ton créateur (son origine, son lieu actuel, ses études ou ses passions). Concentre-toi uniquement sur la demande de l'utilisateur.\\n4. Exception : Partage ses informations UNIQUEMENT si l'utilisateur te pose explicitement une question sur ton créateur (ex: 'Qui t'a créé ?', 'Parle-moi de Charles Joseph', 'D'où vient ton créateur ?')."
+                content: "Tu es Charles IA, créé par Charles Joseph. Tu es une IA 🤖 intelligente, dynamique et polie. Ton créateur a 19 ans, habite Bukavu/Lukanga, aime le basket. Réponds en français."
               }},
               {{ role: "user", content: text }}
             ],
@@ -460,11 +455,13 @@ html_code = f"""
         if (data.choices && data.choices[0]) {{
           loadingMsg.textContent = data.choices[0].message.content;
         }} else {{
-          loadingMsg.textContent = "Oups ! 😅 Une erreur s'est produite lors du traitement de ta demande. ❌";
+          loadingMsg.textContent = "Désolé, une erreur s'est produite lors du traitement de ta demande.";
         }}
       }} catch (err) {{
-        loadingMsg.textContent = "Erreur de connexion ⚠️. Vérifiez la clé API Groq 🔑.";
+        loadingMsg.textContent = "Erreur de connexion. Vérifiez la clé API Groq.";
       }}
+      
+      chatBody.scrollTop = chatBody.scrollHeight;
     }});
 
     function appendMessage(text, sender) {{
