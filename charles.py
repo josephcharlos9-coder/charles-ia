@@ -493,10 +493,24 @@ html_code = f"""
 
     // --- Défilement dynamique du placeholder toutes les 4 secondes ---
     const placeholders = [
-      "Poser une question à Charles IA...",
-      "Demandez-moi d'écrire ou corriger du code 💻",
-      "Générez des idées créatives ✨",
-      "Posez une question sur n'importe quel sujet 🌐"
+            "💻 Coder avec Charles IA"
+            "🛠️ Corrige ton code facilement"
+            "📐 Transforme tes idées en algorithmes"
+            "🐍 Besoin d’un coup de main en Python ?"
+            "✨ Générez des idées créatives"
+            "🎨 Libère ta créativité avec Charles IA"
+            "💡 Inspire-toi avec des concepts originaux"
+            "🧠 Brainstormons ensemble"
+            "🌐 Posez une question sur n’importe quel sujet"
+            "📚 Explore le monde avec Charles IA"
+            "🔍 Demande-moi ce que tu veux savoir"
+            "🌍 Je réponds à tes curiosités"
+            "🤖 Ton compagnon IA toujours prêt à aider"
+            "👋 Charles IA, à ton service"
+            "💬 Interagis avec moi comme avec un ami"
+            "🚀 Découvrons ensemble de nouvelles idées"
+            "Poser une question à Charles IA"
+        
     ];
     let placeholderIndex = 0;
 
