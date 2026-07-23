@@ -71,7 +71,6 @@ html_code = f"""
       color: var(--text-main);
     }}
 
-    /* --- CONTeneUR PRINCIPAL (PC & MOBILE RESPONSIVE) --- */
     .app-container {{
       display: flex;
       flex-direction: column;
@@ -81,7 +80,6 @@ html_code = f"""
       position: relative;
     }}
 
-    /* Top Navigation / Header minimaliste */
     .app-header {{
       display: flex;
       align-items: center;
@@ -124,7 +122,6 @@ html_code = f"""
       background-color: rgba(255, 255, 255, 0.1);
     }}
 
-    /* Corps de discussion / Écran d'accueil centré */
     .chat-body {{
       flex: 1;
       overflow-y: auto;
@@ -153,7 +150,6 @@ html_code = f"""
       color: var(--text-main);
     }}
 
-    /* Boîte de saisie principale au centre (style PC de référence) ou en bas */
     .input-container-wrapper {{
       width: 100%;
       max-width: 720px;
@@ -236,14 +232,13 @@ html_code = f"""
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: transform 0.2s, opacity 0.2s;
+      transition: transform 0.2s;
     }}
 
     .send-btn:hover {{
       transform: scale(1.05);
     }}
 
-    /* Suggestions de démarrage (style puces) */
     .suggestions-grid {{
       display: flex;
       gap: 12px;
@@ -270,7 +265,6 @@ html_code = f"""
       background-color: var(--input-bg);
     }}
 
-    /* Liste des messages */
     .message-list {{
       width: 100%;
       max-width: 720px;
@@ -306,7 +300,6 @@ html_code = f"""
       padding-left: 0;
     }}
 
-    /* Bannière bas de page style "Nouvelle Voix" */
     .bottom-banner {{
       max-width: 600px;
       margin: 0 auto 12px auto;
@@ -360,7 +353,6 @@ html_code = f"""
       cursor: pointer;
     }}
 
-    /* Ajustement Mobile strict */
     @media (max-width: 768px) {{
       .app-header {{
         padding: 12px 16px;
@@ -382,34 +374,32 @@ html_code = f"""
 <body>
 
   <div class="app-container">
-    <!-- Header -->
     <header class="app-header">
       <div class="brand-logo" id="resetBtn">
         <span>Charles IA</span>
         <i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i>
       </div>
       <div class="header-actions">
-        <button class="header-btn" title="Nouvelle discussion">
+        <button class="header-btn" title="Nouvelle discussion" onclick="resetChat()">
           <i data-lucide="square-pen" style="width: 20px; height: 20px;"></i>
         </button>
       </div>
     </header>
 
-    <!-- Zone de discussion principale avec Scroll fluide -->
     <main class="chat-body" id="chatBody">
       <div class="welcome-screen" id="welcomeScreen">
         <h1 class="welcome-title">Comment puis-je vous aider ?</h1>
         
         <div class="suggestions-grid">
-          <div class="suggestion-chip" onclick="selectPrompt('Créer une image')">
+          <div class="suggestion-chip" onclick="selectPrompt('Générer une idée d\'image')">
             <i data-lucide="image" style="width: 18px; height: 18px; color: #3b82f6;"></i>
             <span>Créer une image</span>
           </div>
-          <div class="suggestion-chip" onclick="selectPrompt('Écrire ou modifier du code')">
+          <div class="suggestion-chip" onclick="selectPrompt('Aide-moi à écrire ou modifier du code')">
             <i data-lucide="pen-tool" style="width: 18px; height: 18px; color: #10b981;"></i>
             <span>Écrire ou modifier</span>
           </div>
-          <div class="suggestion-chip" onclick="selectPrompt('Faire une recherche intelligente')">
+          <div class="suggestion-chip" onclick="selectPrompt('Faire une recherche sur un sujet précis')">
             <i data-lucide="globe" style="width: 18px; height: 18px; color: #f59e0b;"></i>
             <span>Faire une recherche</span>
           </div>
@@ -419,7 +409,6 @@ html_code = f"""
       <div class="message-list" id="messageList"></div>
     </main>
 
-    <!-- Bannière informative type Voix -->
     <div class="bottom-banner" id="bottomBanner">
       <div class="banner-info">
         <div class="banner-icon-box">
@@ -433,7 +422,6 @@ html_code = f"""
       <button class="voice-launch-btn" onclick="alert('Module vocal actif ! 🎙️')">Lancer Voix</button>
     </div>
 
-    <!-- Formulaire d'envoi en bas -->
     <div class="input-container-wrapper">
       <form class="chat-form" id="chatForm">
         <textarea
@@ -477,11 +465,9 @@ html_code = f"""
     const welcomeScreen = document.getElementById('welcomeScreen');
     const chatBody = document.getElementById('chatBody');
     const bottomBanner = document.getElementById('bottomBanner');
-    const resetBtn = document.getElementById('resetBtn');
 
     const apiKey = "{GROQ_API_KEY}";
 
-    // Ajustement automatique de la hauteur du textarea de saisie
     userInput.addEventListener('input', function() {{
       this.style.height = 'auto';
       this.style.height = (this.scrollHeight) + 'px';
@@ -492,11 +478,11 @@ html_code = f"""
       userInput.focus();
     }}
 
-    resetBtn.addEventListener('click', () => {{
+    function resetChat() {{
       messageList.innerHTML = '';
       welcomeScreen.style.display = 'flex';
       bottomBanner.style.display = 'flex';
-    }});
+    }}
 
     chatForm.addEventListener('submit', async (e) => {{
       e.preventDefault();
@@ -526,7 +512,7 @@ html_code = f"""
             messages: [
               {{
                 role: "system",
-                content: "Tu es Charles IA, un assistant virtuel professionnel et charismatique, créé par Charles Joseph. Tu t'adresses directement à ton créateur Charles Joseph (19 ans, réside à Lukanga/Bukavu, passionné de basketball, chrétien adventiste). Utilise toujours des emojis pour dynamiser tes réponses, sois poli, élégant et précis."
+                content: "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à chaque utilisateur (sans assumer qu'il s'appelle Charles Joseph). Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. Seulement si l'utilisateur te demande explicitement qui est ton créateur, réponds qu'il s'appelle Charles Joseph (résidant à Lukanga/Bukavu, 19 ans, passionné de basketball)."
               }},
               {{ role: "user", content: text }}
             ],
@@ -538,10 +524,10 @@ html_code = f"""
         if (data.choices && data.choices[0]) {{
           loadingMsg.textContent = data.choices[0].message.content;
         }} else {{
-          loadingMsg.textContent = "Désolé, une petite erreur est survenue lors de la génération. 🤖";
+          loadingMsg.textContent = "Désolé, une erreur est survenue. 🤖";
         }}
       }} catch (err) {{
-        loadingMsg.textContent = "Erreur de connexion avec l'API Groq. Vérifie ta configuration ! ⚠️";
+        loadingMsg.textContent = "Erreur de connexion. ⚠️";
       }}
     }});
 
