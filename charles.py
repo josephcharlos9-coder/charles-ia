@@ -5,11 +5,14 @@ import streamlit as st
 
 # Fonction pour convertir une image locale en Base64
 def get_base64_image(image_path):
-    with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode()
+    try:
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    except FileNotFoundError:
+        return ""
 
 
-# Charge l'image locale (assurez-vous que iconcharlesia.jpg est dans le même dossier que streamlit_app.py)
+# Charge l'image locale
 logo_b64 = get_base64_image("iconcharlesia.jpg")
 
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
@@ -396,7 +399,7 @@ html_code = f"""
 
   <div class="app-container">
     <header class="app-header">
-      <div class="brand-logo" id="resetBtn">
+      <div class="brand-logo" id="resetBtn" onclick="resetChat()">
         <span>Charles IA</span>
         <i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i>
       </div>
@@ -491,26 +494,25 @@ html_code = f"""
 
     const apiKey = "{GROQ_API_KEY}";
 
-    // --- Défilement dynamique du placeholder toutes les 4 secondes ---
+    // --- Défilement dynamique du placeholder (avec virgules corrigées) ---
     const placeholders = [
-            "💻 Coder avec Charles IA"
-            "🛠️ Corrige ton code facilement"
-            "📐 Transforme tes idées en algorithmes"
-            "🐍 Besoin d’un coup de main en Python ?"
-            "✨ Générez des idées créatives"
-            "🎨 Libère ta créativité avec Charles IA"
-            "💡 Inspire-toi avec des concepts originaux"
-            "🧠 Brainstormons ensemble"
-            "🌐 Posez une question sur n’importe quel sujet"
-            "📚 Explore le monde avec Charles IA"
-            "🔍 Demande-moi ce que tu veux savoir"
-            "🌍 Je réponds à tes curiosités"
-            "🤖 Ton compagnon IA toujours prêt à aider"
-            "👋 Charles IA, à ton service"
-            "💬 Interagis avec moi comme avec un ami"
-            "🚀 Découvrons ensemble de nouvelles idées"
-            "Poser une question à Charles IA"
-        
+      "💻 Coder avec Charles IA",
+      "🛠️ Corrige ton code facilement",
+      "📐 Transforme tes idées en algorithmes",
+      "🐍 Besoin d’un coup de main en Python ?",
+      "✨ Générez des idées créatives",
+      "🎨 Libère ta créativité avec Charles IA",
+      "💡 Inspire-toi avec des concepts originaux",
+      "🧠 Brainstormons ensemble",
+      "🌐 Posez une question sur n’importe quel sujet",
+      "📚 Explore le monde avec Charles IA",
+      "🔍 Demande-moi ce que tu veux savoir",
+      "🌍 Je réponds à tes curiosités",
+      "🤖 Ton compagnon IA toujours prêt à aider",
+      "👋 Charles IA, à ton service",
+      "💬 Interagis avec moi comme avec un ami",
+      "🚀 Découvrons ensemble de nouvelles idées",
+      "Poser une question à Charles IA..."
     ];
     let placeholderIndex = 0;
 
