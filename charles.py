@@ -406,7 +406,7 @@ html_code = """
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: "llama-3.1-8b-instant",
+            model: "openai/gpt-oss-20b",
             messages: messagesToSend,
             temperature: 0.7,
             max_tokens: 1024
