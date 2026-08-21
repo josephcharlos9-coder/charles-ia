@@ -366,7 +366,7 @@ html_code = f"""
       }}
 
       try {{
-        const geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + apiKey;" + apiKey;
+        const geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + apiKey;
 
         const response = await fetch(geminiUrl, {{
           method: "POST",
