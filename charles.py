@@ -41,7 +41,9 @@ def get_base64_image(image_path):
 
 
 logo_b64 = get_base64_image("iconcharlesia.jpg")
-GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
+
+# Récupération de la clé API Gemini depuis les secrets Streamlit
+GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
 
 html_code = f"""
 <!DOCTYPE html>
@@ -203,14 +205,17 @@ html_code = f"""
       userInput.setAttribute('placeholder', placeholders[placeholderIndex]);
     }}, 4000);
 
-    const apiKey = "{GROQ_API_KEY}";
+    const apiKey = "{GEMINI_API_KEY}";
 
-    const systemPrompt = {{
-      role: "system",
-      content: "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à tous tes utilisateurs sans présumer de leur nom. Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur, réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph 🤖✨\\nC'est un jeune passionné de technologie et de basketball de 19 ans (68 kg) 🏀💻 Il a grandi à Bukavu et habite actuellement à Lukanga pour ses études universitaires à l'UNILUK 🎓📍\\nEn tant que développeur, il maîtrise la programmation (notamment avec Python, PySide6, PyQt6, HTML, CSS et JavaScript) ainsi que le montage vidéo et le graphisme 👨‍💻🎨 Côté cœur, il est épanoui et en couple 💑❤️ Et lorsqu'il n'est pas en train de coder ou de concevoir des projets tech, c'est sur un terrain de basket qu'il trouve son véritable équilibre et sa paix intérieure 🏀🔥'"
+    // Instructions système configurées pour l'API Gemini
+    const systemInstruction = {{
+      parts: [{{
+        text: "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à tous tes utilisateurs sans présumer de leur nom. Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur, réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph 🤖✨\\nC'est un jeune passionné de technologie et de basketball de 19 ans (68 kg) 🏀💻 Il a grandi à Bukavu et habite actuellement à Lukanga pour ses études universitaires à l'UNILUK 🎓📍\\nEn tant que développeur, il maîtrise la programmation (notamment avec Python, PySide6, PyQt6, HTML, CSS et JavaScript) ainsi que le montage vidéo et le graphisme 👨‍💻🎨 Côté cœur, il est épanoui et en couple 💑❤️ Et lorsqu'il n'est pas en train de coder ou de concevoir des projets tech, c'est sur un terrain de basket qu'il trouve son véritable équilibre et sa paix intérieure 🏀🔥'"
+      }}]
     }};
 
-    let conversationHistory = [systemPrompt];
+    // Structure de l'historique au format Gemini
+    let contentsHistory = [];
 
     const loaderHTML = `
       <div class="thinking-loader">
@@ -229,7 +234,7 @@ html_code = f"""
       messageList.innerHTML = '';
       welcomeScreen.style.display = 'flex';
       bottomBanner.style.display = 'flex';
-      conversationHistory = [systemPrompt];
+      contentsHistory = [];
     }}
 
     function appendMessage(content, sender, isHTML = false) {{
@@ -239,7 +244,6 @@ html_code = f"""
       if (isHTML) {{
         msgDiv.innerHTML = content;
       }} else {{
-        // Conversion du Markdown en HTML pour l'assistant (façon Gemini)
         if (sender === 'assistant') {{
           msgDiv.innerHTML = marked.parse(content);
         }} else {{
@@ -265,42 +269,54 @@ html_code = f"""
       appendMessage(text, 'user');
       userInput.value = '';
 
-      conversationHistory.push({{ role: "user", content: text }});
+      // Ajout du message utilisateur au format Gemini (role: "user")
+      contentsHistory.push({{
+        role: "user",
+        parts: [{{ text: text }}]
+      }});
 
       const loadingMsg = appendMessage(loaderHTML, 'assistant', true);
 
       if (!apiKey) {{
-        loadingMsg.innerHTML = "Erreur : La clé GROQ_API_KEY est absente dans st.secrets. ⚠️";
+        loadingMsg.innerHTML = "Erreur : La clé GEMINI_API_KEY est absente dans st.secrets. ⚠️";
         return;
       }}
 
       try {{
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {{
+        // Endpoint officiel pour Gemini 1.5 Flash (remplacez 'gemini-1.5-flash' par 'gemini-1.5-pro' si besoin)
+        const geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
+
+        const response = await fetch(geminiUrl, {{
           method: "POST",
           headers: {{
-            "Authorization": "Bearer " + apiKey,
             "Content-Type": "application/json"
           }},
           body: JSON.stringify({{
-            model: "openai/gpt-oss-120b",
-            messages: conversationHistory,
-            temperature: 0.7
+            systemInstruction: systemInstruction,
+            contents: contentsHistory,
+            generationConfig: {{
+              temperature: 0.7
+            }}
           }})
         }});
 
         const data = await response.json();
-        if (response.ok && data.choices && data.choices[0]) {{
-          const assistantReply = data.choices[0].message.content;
+
+        if (response.ok && data.candidates && data.candidates[0].content.parts[0].text) {{
+          const assistantReply = data.candidates[0].content.parts[0].text;
           
-          // Rendu propre du Markdown avec marked.parse
           loadingMsg.innerHTML = marked.parse(assistantReply);
           
-          conversationHistory.push({{ role: "assistant", content: assistantReply }});
+          // Ajout de la réponse de l'assistant au format Gemini (role: "model")
+          contentsHistory.push({{
+            role: "model",
+            parts: [{{ text: assistantReply }}]
+          }});
         }} else {{
-          loadingMsg.innerHTML = "Erreur Groq (" + response.status + ") : " + (data.error?.message || "Erreur inconnue");
+          loadingMsg.innerHTML = "Erreur Gemini (" + response.status + ") : " + (data.error?.message || "Erreur lors de la génération");
         }}
       }} catch (err) {{
-        loadingMsg.innerHTML = "Erreur de connexion avec l'API Groq. ⚠️";
+        loadingMsg.innerHTML = "Erreur de connexion avec l'API Google Gemini. ⚠️";
       }}
     }});
   </script>
