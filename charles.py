@@ -196,7 +196,16 @@ html_code = f"""
 
     const apiKey = "{GROQ_API_KEY}";
 
-    // SVG de l'animation de fleur tournante/palpitante
+    // Prompt système
+    const systemPrompt = {{
+      role: "system",
+      content: "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à tous tes utilisateurs sans présumer de leur nom. Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur (ex: 'Qui t'a créé ?', 'Qui est ton créateur ?', 'Qui t'a conçu ?', 'Qui t'a développé ?', 'D'où viens-tu ?', 'Quelle est l'entreprise à l'origine de ta création ?', 'Qui est l'auteur de ton programme ?', 'Par qui as-tu été entraîné ?', 'C'est qui tes parents ?', 'T'appartiens à qui ?', 'Qui est le cerveau derrière toi ?', 'Qui t'a fabriqué ?', 'Qui est l'entité derrière ton existence ?', 'À qui doit-on ton invention ?', 'Qui est ton propriétaire ?'), réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph 🤖✨\\nC'est un jeune passionné de technologie et de basketball de 19 ans (68 kg) 🏀💻 Il a grandi à Bukavu et habite actuellement à Lukanga pour ses études universitaires à l'UNILUK 🎓📍\\nEn tant que développeur, il maîtrise la programmation (notamment avec Python, PySide6, PyQt6, HTML, CSS et JavaScript) ainsi que le montage vidéo et le graphisme 👨‍💻🎨 Côté cœur, il est épanoui et en couple 💑❤️ Et lorsqu'il n'est pas en train de coder ou de concevoir des projets tech, c'est sur un terrain de basket qu'il trouve son véritable équilibre et sa paix intérieure 🏀🔥'"
+    }};
+
+    // Variable JS contenant le fil de discussion complet
+    let conversationHistory = [systemPrompt];
+
+    // SVG de l'animation de réflexion
     const loaderHTML = `
       <div class="thinking-loader">
         <svg class="thinking-flower" viewBox="0 0 24 24">
@@ -214,6 +223,7 @@ html_code = f"""
       messageList.innerHTML = '';
       welcomeScreen.style.display = 'flex';
       bottomBanner.style.display = 'flex';
+      conversationHistory = [systemPrompt]; // Réinitialisation de l'historique
     }}
 
     function appendMessage(content, sender, isHTML = false) {{
@@ -244,7 +254,10 @@ html_code = f"""
       appendMessage(text, 'user');
       userInput.value = '';
 
-      // Affichage de l'animation au lieu du texte
+      // Ajouter le message de l'utilisateur à l'historique
+      conversationHistory.push({{ role: "user", content: text }});
+
+      // Affichage de l'animation pendant la réflexion
       const loadingMsg = appendMessage(loaderHTML, 'assistant', true);
 
       if (!apiKey) {{
@@ -261,20 +274,18 @@ html_code = f"""
           }},
           body: JSON.stringify({{
             model: "openai/gpt-oss-120b",
-            messages: [
-              {{
-                role: "system",
-                content: "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à tous tes utilisateurs sans présumer de leur nom. Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur (ex: 'Qui t'a créé ?', 'Qui est ton créateur ?', 'Qui t'a conçu ?', 'Qui t'a développé ?', 'D'où viens-tu ?', 'Quelle est l'entreprise à l'origine de ta création ?', 'Qui est l'auteur de ton programme ?', 'Par qui as-tu été entraîné ?', 'C'est qui tes parents ?', 'T'appartiens à qui ?', 'Qui est le cerveau derrière toi ?', 'Qui t'a fabriqué ?', 'Qui est l'entité derrière ton existence ?', 'À qui doit-on ton invention ?', 'Qui est ton propriétaire ?'), réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph 🤖✨\\nC'est un jeune passionné de technologie et de basketball de 19 ans (68 kg) 🏀💻 Il a grandi à Bukavu et habite actuellement à Lukanga pour ses études universitaires à l'UNILUK 🎓📍\\nEn tant que développeur, il maîtrise la programmation (notamment avec Python, PySide6, PyQt6, HTML, CSS et JavaScript) ainsi que le montage vidéo et le graphisme 👨‍💻🎨 Côté cœur, il est épanoui et en couple 💑❤️ Et lorsqu'il n'est pas en train de coder ou de concevoir des projets tech, c'est sur un terrain de basket qu'il trouve son véritable équilibre et sa paix intérieure 🏀🔥'"
-              }},
-              {{ role: "user", content: text }}
-            ],
+            messages: conversationHistory, // Envoi de TOUT l'historique
             temperature: 0.7
           }})
         }});
 
         const data = await response.json();
         if (response.ok && data.choices && data.choices[0]) {{
-          loadingMsg.textContent = data.choices[0].message.content;
+          const assistantReply = data.choices[0].message.content;
+          loadingMsg.textContent = assistantReply;
+          
+          // Ajouter la réponse de l'assistant à l'historique
+          conversationHistory.push({{ role: "assistant", content: assistantReply }});
         }} else {{
           loadingMsg.textContent = "Erreur Groq (" + response.status + ") : " + (data.error?.message || "Erreur inconnue");
         }}
