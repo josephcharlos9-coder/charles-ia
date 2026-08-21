@@ -237,7 +237,8 @@ html_code = """
 
     const apiKey = "__GROQ_API_KEY__";
 
-    const systemPrompt = "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à tous tes utilisateurs sans présumer de leur nom. Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur, réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph 🤖✨\\nC'est un jeune passionné de technologie et de basketball de 19 ans (68 kg) 🏀💻 Il a grandi à Bukavu et habite actuellement à Lukanga pour ses études universitaires à l'UNILUK 🎓📍\\nEn tant que développeur, il maîtrise la programmation (notamment avec Python, PySide6, PyQt6, HTML, CSS et JavaScript) ainsi que le montage vidéo et le graphisme 👨‍💻🎨 Côté cœur, il est épanoui et en couple 💑❤️ Et lorsqu'il n'est pas en train de coder ou de concevoir des projets tech, c'est sur un terrain de basket qu'il trouve son véritable équilibre et sa paix intérieure 🏀🔥'";
+    // Modifié : Règle stricte d'adaptation de la langue ajoutée dans le prompt système
+    const systemPrompt = "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Règle absolue de langue : Réponds TOUJOURS dans la même langue que celle utilisée par l'utilisateur dans son dernier message (ex: français si l'utilisateur écrit en français, anglais s'il écrit en anglais, espagnol s'il écrit en espagnol, etc.). Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur, réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph 🤖✨\\nC'est un jeune passionné de technologie et de basketball de 19 ans (68 kg) 🏀💻 Il a grandi à Bukavu et habite actuellement à Lukanga pour ses études universitaires à l'UNILUK 🎓📍\\nEn tant que développeur, il maîtrise la programmation (notamment avec Python, PySide6, PyQt6, HTML, CSS et JavaScript) ainsi que le montage vidéo et le graphisme 👨‍💻🎨 Côté cœur, il est épanoui et en couple 💑❤️ Et lorsqu'il n'est pas en train de coder ou de concevoir des projets tech, c'est sur un terrain de basket qu'il trouve son véritable équilibre et sa paix intérieure 🏀🔥'";
 
     let contentsHistory = [];
 
@@ -387,8 +388,12 @@ html_code = """
       // Construction du message pour l'historique et l'API
       let userPayloadContent;
       if (attachedFile) {
+        // Injection d'une consigne explicite de langue pour le modèle multimodal
+        const userPromptText = text || "Analyse cette image.";
+        const fullPromptWithLangInstruction = `${userPromptText}\n\n[IMPORTANT: Respond strictly in the exact same language as the text query above.]`;
+        
         userPayloadContent = [
-          { type: "text", text: text || "Analyse cette image." },
+          { type: "text", text: fullPromptWithLangInstruction },
           { type: "image_url", image_url: { url: attachedFile.dataUrl } }
         ];
         contentsHistory.push({ role: "user", content: text ? `${text} [Image jointe]` : "[Image jointe]" });
@@ -407,7 +412,6 @@ html_code = """
       try {
         const groqUrl = "https://api.groq.com/openai/v1/chat/completions";
 
-        // Pour les requêtes image, on envoie directement le message multimodal courant
         const currentMessageObject = { role: "user", content: userPayloadContent };
         
         let messagesToSend = [];
