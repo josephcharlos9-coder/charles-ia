@@ -92,6 +92,34 @@ html_code = f"""
     .banner-info {{ display: flex; align-items: center; gap: 12px; }}
     .banner-icon-box {{ width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #9333ea); display: flex; align-items: center; justify-content: center; color: #fff; }}
     .voice-launch-btn {{ background-color: #262626; color: var(--text-main); border: 1px solid var(--border-color); padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }}
+
+    /* Style de l'animation de réflexion */
+    .thinking-loader {{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 0;
+    }}
+    .thinking-flower {{
+      width: 28px;
+      height: 28px;
+      fill: #4c6ef5;
+      animation: spinPulse 2s linear infinite;
+    }}
+    @keyframes spinPulse {{
+      0% {{
+        transform: rotate(0deg) scale(0.85);
+        opacity: 0.6;
+      }}
+      50% {{
+        transform: rotate(180deg) scale(1.1);
+        opacity: 1;
+      }}
+      100% {{
+        transform: rotate(360deg) scale(0.85);
+        opacity: 0.6;
+      }}
+    }}
   </style>
 </head>
 <body>
@@ -168,6 +196,15 @@ html_code = f"""
 
     const apiKey = "{GROQ_API_KEY}";
 
+    // SVG de l'animation de fleur tournante/palpitante
+    const loaderHTML = `
+      <div class="thinking-loader">
+        <svg class="thinking-flower" viewBox="0 0 24 24">
+          <path d="M12 2C12.55 2 13 2.45 13 3V5.07C14.73 5.43 16.2 6.42 17.15 7.85L18.62 6.38C19.01 5.99 19.64 5.99 20.03 6.38C20.42 6.77 20.42 7.4 20.03 7.79L18.56 9.26C19.58 10.21 20.57 11.68 20.93 13.41H23C23.55 13.41 24 13.86 24 14.41C24 14.96 23.55 15.41 23 15.41H20.93C20.57 17.14 19.58 18.61 18.56 19.56L20.03 21.03C20.42 21.42 20.42 22.05 20.03 22.44C19.64 22.83 19.01 22.83 18.62 22.44L17.15 20.97C16.2 21.9 14.73 22.89 13 23.25V25.32C13 25.87 12.55 26.32 12 26.32C11.45 26.32 11 25.87 11 25.32V23.25C9.27 22.89 7.8 21.9 6.85 20.97L5.38 22.44C4.99 22.83 4.36 22.83 3.97 22.44C3.58 22.05 3.58 21.42 3.97 21.03L5.44 19.56C4.42 18.61 3.43 17.14 3.07 15.41H1C0.45 15.41 0 14.96 0 14.41C0 13.86 0.45 13.41 1 13.41H3.07C3.43 11.68 4.42 10.21 5.44 9.26L3.97 7.79C3.58 7.4 3.58 6.77 3.97 6.38C4.36 5.99 4.99 5.99 5.38 6.38L6.85 7.85C7.8 6.42 9.27 5.43 11 5.07V3C11 2.45 11.45 2 12 2Z" />
+        </svg>
+      </div>
+    `;
+
     function selectPrompt(text) {{
       userInput.value = text;
       userInput.focus();
@@ -179,10 +216,16 @@ html_code = f"""
       bottomBanner.style.display = 'flex';
     }}
 
-    function appendMessage(text, sender) {{
+    function appendMessage(content, sender, isHTML = false) {{
       const msgDiv = document.createElement('div');
       msgDiv.classList.add('message-bubble', sender === 'user' ? 'message-user' : 'message-assistant');
-      msgDiv.textContent = text;
+      
+      if (isHTML) {{
+        msgDiv.innerHTML = content;
+      }} else {{
+        msgDiv.textContent = content;
+      }}
+
       messageList.appendChild(msgDiv);
       chatBody.scrollTop = chatBody.scrollHeight;
       return msgDiv;
@@ -201,7 +244,8 @@ html_code = f"""
       appendMessage(text, 'user');
       userInput.value = '';
 
-      const loadingMsg = appendMessage("Charles IA réfléchit...", 'assistant');
+      // Affichage de l'animation au lieu du texte
+      const loadingMsg = appendMessage(loaderHTML, 'assistant', true);
 
       if (!apiKey) {{
         loadingMsg.textContent = "Erreur : La clé GROQ_API_KEY est absente dans st.secrets. ⚠️";
