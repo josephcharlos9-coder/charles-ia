@@ -488,4 +488,8 @@ html_code = """
 </html>
 """.replace("__LOGO_B64__", logo_b64).replace("__GEMINI_API_KEY__", GEMINI_API_KEY)
 
-st.components.v1.html(html_code, height=900, scrolling=False)
+# Remplacement avec le composant iframe personnalisé pour autoriser le microphone
+st.components.v1.html(
+    f'<iframe srcdoc="{html_code.replace(\'"\', \'&quot;\')}" allow="microphone *" style="width:100%; height:900px; border:none;"></iframe>',
+    height=900,
+)
