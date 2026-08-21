@@ -42,8 +42,8 @@ def get_base64_image(image_path):
 
 logo_b64 = get_base64_image("iconcharlesia.jpg")
 
-# Récupération de la clé API Gemini depuis les secrets Streamlit
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
+# Récupération de la clé API Groq depuis les secrets Streamlit
+GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
 
 html_code = """
 <!DOCTYPE html>
@@ -56,7 +56,7 @@ html_code = """
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Parser Markdown pour afficher les réponses comme Gemini -->
+  <!-- Parser Markdown -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
@@ -96,7 +96,7 @@ html_code = """
     .file-preview-name { font-size: 0.85rem; color: #fff; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .remove-file-btn { background: none; border: none; color: #8e8e93; cursor: pointer; font-size: 1rem; padding: 2px 6px; }
 
-    /* Styles Markdown façon Gemini */
+    /* Styles Markdown */
     .message-bubble { max-width: 85%; padding: 14px 18px; border-radius: 16px; font-size: 0.95rem; line-height: 1.6; word-break: break-word; }
     .message-user { align-self: flex-end; background-color: #212121; color: #FFFFFF; border-bottom-right-radius: 4px; }
     .message-assistant { align-self: flex-start; background-color: transparent; color: #FFFFFF; padding-left: 0; }
@@ -121,7 +121,6 @@ html_code = """
       100% { transform: rotate(360deg) scale(0.85); opacity: 0.6; }
     }
 
-    /* Animation du bouton micro actif */
     .mic-active {
       color: #ef4444 !important;
       animation: pulseMic 1.2s infinite;
@@ -188,7 +187,7 @@ html_code = """
         <textarea class="input-field" id="userInput" rows="1" placeholder="Poser une question à Charles IA..."></textarea>
         <div class="form-actions">
           <div class="actions-left">
-            <input type="file" id="fileInput" accept="image/*,audio/*" style="display: none;" onchange="handleFileSelect(event)">
+            <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
             <button type="button" class="icon-action-btn" onclick="document.getElementById('fileInput').click()"><i data-lucide="plus" style="width: 20px; height: 20px;"></i></button>
             <button type="button" class="icon-action-btn"><i data-lucide="sliders-horizontal" style="width: 18px; height: 18px;"></i></button>
             <button type="button" class="icon-action-btn"><i data-lucide="search" style="width: 18px; height: 18px;"></i></button>
@@ -232,19 +231,14 @@ html_code = """
     ];
 
     let placeholderIndex = 0;
-
     setInterval(() => {
       placeholderIndex = (placeholderIndex + 1) % placeholders.length;
       userInput.setAttribute('placeholder', placeholders[placeholderIndex]);
     }, 4000);
 
-    const apiKey = "__GEMINI_API_KEY__";
+    const apiKey = "__GROQ_API_KEY__";
 
-    const systemInstruction = {
-      parts: [{
-        text: "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à tous tes utilisateurs sans présumer de leur nom. Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur, réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph 🤖✨\\nC'est un jeune passionné de technologie et de basketball de 19 ans (68 kg) 🏀💻 Il a grandi à Bukavu et habite actuellement à Lukanga pour ses études universitaires à l'UNILUK 🎓📍\\nEn tant que développeur, il maîtrise la programmation (notamment avec Python, PySide6, PyQt6, HTML, CSS et JavaScript) ainsi que le montage vidéo et le graphisme 👨‍💻🎨 Côté cœur, il est épanoui et en couple 💑❤️ Et lorsqu'il n'est pas en train de coder ou de concevoir des projets tech, c'est sur un terrain de basket qu'il trouve son véritable équilibre et sa paix intérieure 🏀🔥'"
-      }]
-    };
+    const systemPrompt = "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à tous tes utilisateurs sans présumer de leur nom. Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur, réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph 🤖✨\\nC'est un jeune passionné de technologie et de basketball de 19 ans (68 kg) 🏀💻 Il a grandi à Bukavu et habite actuellement à Lukanga pour ses études universitaires à l'UNILUK 🎓📍\\nEn tant que développeur, il maîtrise la programmation (notamment avec Python, PySide6, PyQt6, HTML, CSS et JavaScript) ainsi que le montage vidéo et le graphisme 👨‍💻🎨 Côté cœur, il est épanoui et en couple 💑❤️ Et lorsqu'il n'est pas en train de coder ou de concevoir des projets tech, c'est sur un terrain de basket qu'il trouve son véritable équilibre et sa paix intérieure 🏀🔥'";
 
     let contentsHistory = [];
 
@@ -256,7 +250,7 @@ html_code = """
       </div>
     `;
 
-    // --- Reconnaissance Vocale (Web Speech API) ---
+    // Reconnaissance Vocale
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
     let isListening = false;
@@ -280,11 +274,7 @@ html_code = """
         userInput.value = transcript;
       };
 
-      recognition.onerror = function(event) {
-        console.error("Erreur vocale :", event.error);
-        stopVoiceInput();
-      };
-
+      recognition.onerror = function() { stopVoiceInput(); };
       recognition.onend = function() {
         stopVoiceInput();
         if (userInput.value.trim().length > 0) {
@@ -298,13 +288,7 @@ html_code = """
         alert("La reconnaissance vocale n'est pas supportée par votre navigateur.");
         return;
       }
-
-      if (isListening) {
-        recognition.stop();
-      } else {
-        userInput.value = '';
-        recognition.start();
-      }
+      isListening ? recognition.stop() : (userInput.value = '', recognition.start());
     }
 
     function stopVoiceInput() {
@@ -318,22 +302,13 @@ html_code = """
 
       const reader = new FileReader();
       reader.onload = function(e) {
-        const base64Data = e.target.result.split(',')[1];
         currentFile = {
-          mimeType: file.type,
-          base64: base64Data,
           dataUrl: e.target.result,
-          name: file.name,
-          isImage: file.type.startsWith('image/')
+          name: file.name
         };
-
         filePreviewName.textContent = file.name;
-        if (currentFile.isImage) {
-          filePreviewThumb.src = e.target.result;
-          filePreviewThumb.style.display = 'block';
-        } else {
-          filePreviewThumb.style.display = 'none';
-        }
+        filePreviewThumb.src = e.target.result;
+        filePreviewThumb.style.display = 'block';
         filePreviewContainer.style.display = 'flex';
       };
       reader.readAsDataURL(file);
@@ -365,10 +340,8 @@ html_code = """
       msgDiv.classList.add('message-bubble', sender === 'user' ? 'message-user' : 'message-assistant');
       
       let htmlContent = '';
-      if (fileObj && fileObj.isImage) {
+      if (fileObj) {
         htmlContent += `<img src="${fileObj.dataUrl}" class="message-media-img" alt="Media envoyé" />`;
-      } else if (fileObj && !fileObj.isImage) {
-        htmlContent += `<div style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 6px;">📁 ${fileObj.name}</div>`;
       }
 
       if (isHTML) {
@@ -409,104 +382,61 @@ html_code = """
       userInput.value = '';
       clearSelectedFile();
 
-      const userParts = [];
-      if (text) {
-        userParts.push({ text: text });
-      }
-      if (attachedFile) {
-        userParts.push({
-          inlineData: {
-            mimeType: attachedFile.mimeType,
-            data: attachedFile.base64
-          }
-        });
-      }
-
-      contentsHistory.push({
-        role: "user",
-        parts: userParts
-      });
-
-      const trimmedHistory = contentsHistory.slice(-6).map((entry, idx, arr) => {
-        if (entry.role === "user") {
-          if (idx < arr.length - 1) {
-            const cleanedParts = entry.parts.map(part => {
-              if (part.text) return { text: part.text };
-              return { text: "[Fichier joint déjà traité]" };
-            });
-            return { role: "user", parts: cleanedParts };
-          }
-        }
-        return entry;
-      });
+      contentsHistory.push({ role: "user", content: text || "[Image jointe]" });
 
       const loadingMsg = appendMessage(loaderHTML, 'assistant', true);
 
       if (!apiKey) {
-        loadingMsg.innerHTML = "Erreur : La clé GEMINI_API_KEY est absente dans st.secrets. ⚠️";
+        loadingMsg.innerHTML = "Erreur : La clé GROQ_API_KEY est absente dans st.secrets. ⚠️";
         return;
       }
 
       try {
-        const geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + apiKey;
+        const groqUrl = "https://api.groq.com/openai/v1/chat/completions";
 
-        // Fonction pour exécuter la requête avec re-tentatives automatiques (Retry sur 503/429)
-        async function fetchWithRetry(url, options, retries = 3, delay = 2000) {
-          for (let i = 0; i < retries; i++) {
-            const res = await fetch(url, options);
-            if (res.status !== 503 && res.status !== 429) {
-              return res;
-            }
-            if (i < retries - 1) {
-              loadingMsg.innerHTML = `Le serveur est très sollicité, nouvelle tentative (${i + 1}/${retries})... ⏳`;
-              await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
-            } else {
-              return res;
-            }
-          }
-        }
+        const messagesToSend = [
+          { role: "system", content: systemPrompt },
+          ...contentsHistory.slice(-10)
+        ];
 
-        const response = await fetchWithRetry(geminiUrl, {
+        const response = await fetch(groqUrl, {
           method: "POST",
           headers: {
+            "Authorization": "Bearer " + apiKey,
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            systemInstruction: systemInstruction,
-            contents: trimmedHistory,
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 1024
-            }
+            model: "llama-3.3-70b-versatile",
+            messages: messagesToSend,
+            temperature: 0.7,
+            max_tokens: 1024
           })
         });
 
         const data = await response.json();
 
-        if (response.ok && data.candidates && data.candidates[0].content.parts[0].text) {
-          const assistantReply = data.candidates[0].content.parts[0].text;
+        if (response.ok && data.choices && data.choices[0].message.content) {
+          const assistantReply = data.choices[0].message.content;
           
           loadingMsg.innerHTML = marked.parse(assistantReply);
           
           contentsHistory.push({
-            role: "model",
-            parts: [{ text: assistantReply }]
+            role: "assistant",
+            content: assistantReply
           });
-        } else if (response.status === 503) {
-          loadingMsg.innerHTML = "Les serveurs Gemini sont actuellement très sollicités. Veuillez patienter quelques secondes et réessayer. ⏳";
         } else {
-          loadingMsg.innerHTML = "Erreur Gemini (" + response.status + ") : " + (data.error?.message || "Erreur lors de la génération");
+          loadingMsg.innerHTML = "Erreur Groq (" + response.status + ") : " + (data.error?.message || "Erreur lors de la génération");
         }
       } catch (err) {
-        loadingMsg.innerHTML = "Erreur de connexion avec l'API Google Gemini. ⚠️";
+        loadingMsg.innerHTML = "Erreur de connexion avec l'API Groq. ⚠️";
       }
     });
   </script>
 </body>
 </html>
-""".replace("__LOGO_B64__", logo_b64).replace("__GEMINI_API_KEY__", GEMINI_API_KEY)
+""".replace("__LOGO_B64__", logo_b64).replace("__GROQ_API_KEY__", GROQ_API_KEY)
 
-# Intégration de l'iframe autorisant le microphone
+# Intégration dans Streamlit
 st.components.v1.html(
     html_code,
     height=900,
