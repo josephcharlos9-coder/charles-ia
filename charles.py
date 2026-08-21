@@ -185,6 +185,24 @@ html_code = f"""
     const bottomBanner = document.getElementById('bottomBanner');
     const chatBody = document.getElementById('chatBody');
 
+    const placeholders = [
+      "Poser une question à Charles IA...",
+      "Demandez-moi d'écrire ou corriger du code 💻",
+      "Générez des idées créatives ✨",
+      "Posez une question sur n'importe quel sujet 🌐",
+      "Besoin d’un coup de main en Python ?",
+      "Libère ta créativité avec Charles IA 🎨",
+      "Explore le monde avec Charles IA 🌍",
+      "Transformons tes idées en algorithmes 🔢"
+    ];
+
+    let placeholderIndex = 0;
+
+    setInterval(() => {{
+      placeholderIndex = (placeholderIndex + 1) % placeholders.length;
+      userInput.setAttribute('placeholder', placeholders[placeholderIndex]);
+    }}, 4000);
+
     const apiKey = "{GROQ_API_KEY}";
 
     const systemPrompt = {{
