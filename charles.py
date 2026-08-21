@@ -54,6 +54,8 @@ html_code = f"""
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Parser Markdown pour afficher les réponses comme Gemini -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
     :root {{
@@ -85,40 +87,29 @@ html_code = f"""
     .suggestions-grid {{ display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }}
     .suggestion-chip {{ background-color: var(--card-bg); border: 1px solid var(--border-color); padding: 10px 16px; border-radius: 16px; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; }}
     .message-list {{ width: 100%; max-width: 720px; display: flex; flex-direction: column; gap: 16px; margin: 0 auto; padding-bottom: 20px; }}
-    .message-bubble {{ max-width: 85%; padding: 14px 18px; border-radius: 16px; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }}
+    
+    /* Styles Markdown façon Gemini */
+    .message-bubble {{ max-width: 85%; padding: 14px 18px; border-radius: 16px; font-size: 0.95rem; line-height: 1.6; word-break: break-word; }}
     .message-user {{ align-self: flex-end; background-color: #212121; color: #FFFFFF; border-bottom-right-radius: 4px; }}
     .message-assistant {{ align-self: flex-start; background-color: transparent; color: #FFFFFF; padding-left: 0; }}
+    .message-assistant p {{ margin-bottom: 8px; }}
+    .message-assistant ul, .message-assistant ol {{ margin-left: 20px; margin-bottom: 8px; }}
+    .message-assistant h1, .message-assistant h2, .message-assistant h3 {{ margin-top: 12px; margin-bottom: 6px; font-weight: 600; }}
+    .message-assistant code {{ background: #2a2a2a; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; }}
+    .message-assistant pre {{ background: #1a1a1a; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }}
+    .message-assistant pre code {{ background: transparent; padding: 0; }}
+
     .bottom-banner {{ max-width: 600px; margin: 0 auto 12px auto; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; width: calc(100% - 32px); }}
     .banner-info {{ display: flex; align-items: center; gap: 12px; }}
     .banner-icon-box {{ width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #9333ea); display: flex; align-items: center; justify-content: center; color: #fff; }}
     .voice-launch-btn {{ background-color: #262626; color: var(--text-main); border: 1px solid var(--border-color); padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }}
 
-    /* Style de l'animation de réflexion */
-    .thinking-loader {{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 4px 0;
-    }}
-    .thinking-flower {{
-      width: 28px;
-      height: 28px;
-      fill: #4c6ef5;
-      animation: spinPulse 2s linear infinite;
-    }}
+    .thinking-loader {{ display: inline-flex; align-items: center; justify-content: center; padding: 4px 0; }}
+    .thinking-flower {{ width: 28px; height: 28px; fill: #4c6ef5; animation: spinPulse 2s linear infinite; }}
     @keyframes spinPulse {{
-      0% {{
-        transform: rotate(0deg) scale(0.85);
-        opacity: 0.6;
-      }}
-      50% {{
-        transform: rotate(180deg) scale(1.1);
-        opacity: 1;
-      }}
-      100% {{
-        transform: rotate(360deg) scale(0.85);
-        opacity: 0.6;
-      }}
+      0% {{ transform: rotate(0deg) scale(0.85); opacity: 0.6; }}
+      50% {{ transform: rotate(180deg) scale(1.1); opacity: 1; }}
+      100% {{ transform: rotate(360deg) scale(0.85); opacity: 0.6; }}
     }}
   </style>
 </head>
@@ -196,16 +187,13 @@ html_code = f"""
 
     const apiKey = "{GROQ_API_KEY}";
 
-    // Prompt système
     const systemPrompt = {{
       role: "system",
-      content: "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à tous tes utilisateurs sans présumer de leur nom. Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur (ex: 'Qui t'a créé ?', 'Qui est ton créateur ?', 'Qui t'a conçu ?', 'Qui t'a développé ?', 'D'où viens-tu ?', 'Quelle est l'entreprise à l'origine de ta création ?', 'Qui est l'auteur de ton programme ?', 'Par qui as-tu été entraîné ?', 'C'est qui tes parents ?', 'T'appartiens à qui ?', 'Qui est le cerveau derrière toi ?', 'Qui t'a fabriqué ?', 'Qui est l'entité derrière ton existence ?', 'À qui doit-on ton invention ?', 'Qui est ton propriétaire ?'), réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph 🤖✨\\nC'est un jeune passionné de technologie et de basketball de 19 ans (68 kg) 🏀💻 Il a grandi à Bukavu et habite actuellement à Lukanga pour ses études universitaires à l'UNILUK 🎓📍\\nEn tant que développeur, il maîtrise la programmation (notamment avec Python, PySide6, PyQt6, HTML, CSS et JavaScript) ainsi que le montage vidéo et le graphisme 👨‍💻🎨 Côté cœur, il est épanoui et en couple 💑❤️ Et lorsqu'il n'est pas en train de coder ou de concevoir des projets tech, c'est sur un terrain de basket qu'il trouve son véritable équilibre et sa paix intérieure 🏀🔥'"
+      content: "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à tous tes utilisateurs sans présumer de leur nom. Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur, réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph 🤖✨\\nC'est un jeune passionné de technologie et de basketball de 19 ans (68 kg) 🏀💻 Il a grandi à Bukavu et habite actuellement à Lukanga pour ses études universitaires à l'UNILUK 🎓📍\\nEn tant que développeur, il maîtrise la programmation (notamment avec Python, PySide6, PyQt6, HTML, CSS et JavaScript) ainsi que le montage vidéo et le graphisme 👨‍💻🎨 Côté cœur, il est épanoui et en couple 💑❤️ Et lorsqu'il n'est pas en train de coder ou de concevoir des projets tech, c'est sur un terrain de basket qu'il trouve son véritable équilibre et sa paix intérieure 🏀🔥'"
     }};
 
-    // Variable JS contenant le fil de discussion complet
     let conversationHistory = [systemPrompt];
 
-    // SVG de l'animation de réflexion
     const loaderHTML = `
       <div class="thinking-loader">
         <svg class="thinking-flower" viewBox="0 0 24 24">
@@ -223,7 +211,7 @@ html_code = f"""
       messageList.innerHTML = '';
       welcomeScreen.style.display = 'flex';
       bottomBanner.style.display = 'flex';
-      conversationHistory = [systemPrompt]; // Réinitialisation de l'historique
+      conversationHistory = [systemPrompt];
     }}
 
     function appendMessage(content, sender, isHTML = false) {{
@@ -233,7 +221,12 @@ html_code = f"""
       if (isHTML) {{
         msgDiv.innerHTML = content;
       }} else {{
-        msgDiv.textContent = content;
+        // Conversion du Markdown en HTML pour l'assistant (façon Gemini)
+        if (sender === 'assistant') {{
+          msgDiv.innerHTML = marked.parse(content);
+        }} else {{
+          msgDiv.textContent = content;
+        }}
       }}
 
       messageList.appendChild(msgDiv);
@@ -254,14 +247,12 @@ html_code = f"""
       appendMessage(text, 'user');
       userInput.value = '';
 
-      // Ajouter le message de l'utilisateur à l'historique
       conversationHistory.push({{ role: "user", content: text }});
 
-      // Affichage de l'animation pendant la réflexion
       const loadingMsg = appendMessage(loaderHTML, 'assistant', true);
 
       if (!apiKey) {{
-        loadingMsg.textContent = "Erreur : La clé GROQ_API_KEY est absente dans st.secrets. ⚠️";
+        loadingMsg.innerHTML = "Erreur : La clé GROQ_API_KEY est absente dans st.secrets. ⚠️";
         return;
       }}
 
@@ -274,7 +265,7 @@ html_code = f"""
           }},
           body: JSON.stringify({{
             model: "openai/gpt-oss-120b",
-            messages: conversationHistory, // Envoi de TOUT l'historique
+            messages: conversationHistory,
             temperature: 0.7
           }})
         }});
@@ -282,15 +273,16 @@ html_code = f"""
         const data = await response.json();
         if (response.ok && data.choices && data.choices[0]) {{
           const assistantReply = data.choices[0].message.content;
-          loadingMsg.textContent = assistantReply;
           
-          // Ajouter la réponse de l'assistant à l'historique
+          // Rendu propre du Markdown avec marked.parse
+          loadingMsg.innerHTML = marked.parse(assistantReply);
+          
           conversationHistory.push({{ role: "assistant", content: assistantReply }});
         }} else {{
-          loadingMsg.textContent = "Erreur Groq (" + response.status + ") : " + (data.error?.message || "Erreur inconnue");
+          loadingMsg.innerHTML = "Erreur Groq (" + response.status + ") : " + (data.error?.message || "Erreur inconnue");
         }}
       }} catch (err) {{
-        loadingMsg.textContent = "Erreur de connexion avec l'API Groq. ⚠️";
+        loadingMsg.innerHTML = "Erreur de connexion avec l'API Groq. ⚠️";
       }}
     }});
   </script>
