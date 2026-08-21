@@ -84,12 +84,18 @@ html_code = f"""
     .input-field {{ border: none; outline: none; background: transparent; font-size: 1rem; color: var(--text-main); width: 100%; resize: none; max-height: 150px; }}
     .form-actions {{ display: flex; align-items: center; justify-content: space-between; }}
     .actions-left, .actions-right {{ display: flex; align-items: center; gap: 8px; }}
-    .icon-action-btn {{ background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; }}
+    .icon-action-btn {{ background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; display: flex; align-items: center; justify-content: center; }}
     .send-btn {{ background-color: var(--text-main); color: #000; width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }}
     .suggestions-grid {{ display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }}
     .suggestion-chip {{ background-color: var(--card-bg); border: 1px solid var(--border-color); padding: 10px 16px; border-radius: 16px; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; }}
     .message-list {{ width: 100%; max-width: 720px; display: flex; flex-direction: column; gap: 16px; margin: 0 auto; padding-bottom: 20px; }}
     
+    /* Styles Prévisualisation Fichier */
+    .file-preview-container {{ display: none; align-items: center; gap: 10px; background: #2a2a2a; padding: 8px 12px; border-radius: 12px; width: fit-content; margin-bottom: 4px; }}
+    .file-preview-thumb {{ width: 40px; height: 40px; border-radius: 8px; object-fit: cover; display: none; }}
+    .file-preview-name {{ font-size: 0.85rem; color: #fff; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+    .remove-file-btn {{ background: none; border: none; color: #8e8e93; cursor: pointer; font-size: 1rem; padding: 2px 6px; }}
+
     /* Styles Markdown façon Gemini */
     .message-bubble {{ max-width: 85%; padding: 14px 18px; border-radius: 16px; font-size: 0.95rem; line-height: 1.6; word-break: break-word; }}
     .message-user {{ align-self: flex-end; background-color: #212121; color: #FFFFFF; border-bottom-right-radius: 4px; }}
@@ -100,6 +106,7 @@ html_code = f"""
     .message-assistant code {{ background: #2a2a2a; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; }}
     .message-assistant pre {{ background: #1a1a1a; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }}
     .message-assistant pre code {{ background: transparent; padding: 0; }}
+    .message-media-img {{ max-width: 100%; max-height: 250px; border-radius: 12px; margin-bottom: 8px; display: block; }}
 
     .bottom-banner {{ max-width: 600px; margin: 0 auto 12px auto; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; width: calc(100% - 32px); }}
     .banner-info {{ display: flex; align-items: center; gap: 12px; }}
@@ -162,10 +169,16 @@ html_code = f"""
 
     <div class="input-container-wrapper">
       <form class="chat-form" id="chatForm">
+        <div class="file-preview-container" id="filePreviewContainer">
+          <img id="filePreviewThumb" class="file-preview-thumb" src="" alt="Aperçu" />
+          <span id="filePreviewName" class="file-preview-name"></span>
+          <button type="button" class="remove-file-btn" onclick="clearSelectedFile()">✕</button>
+        </div>
         <textarea class="input-field" id="userInput" rows="1" placeholder="Poser une question à Charles IA..."></textarea>
         <div class="form-actions">
           <div class="actions-left">
-            <button type="button" class="icon-action-btn"><i data-lucide="plus" style="width: 20px; height: 20px;"></i></button>
+            <input type="file" id="fileInput" accept="image/*,audio/*" style="display: none;" onchange="handleFileSelect(event)">
+            <button type="button" class="icon-action-btn" onclick="document.getElementById('fileInput').click()"><i data-lucide="plus" style="width: 20px; height: 20px;"></i></button>
             <button type="button" class="icon-action-btn"><i data-lucide="sliders-horizontal" style="width: 18px; height: 18px;"></i></button>
             <button type="button" class="icon-action-btn"><i data-lucide="search" style="width: 18px; height: 18px;"></i></button>
           </div>
@@ -186,6 +199,12 @@ html_code = f"""
     const welcomeScreen = document.getElementById('welcomeScreen');
     const bottomBanner = document.getElementById('bottomBanner');
     const chatBody = document.getElementById('chatBody');
+    const fileInput = document.getElementById('fileInput');
+    const filePreviewContainer = document.getElementById('filePreviewContainer');
+    const filePreviewThumb = document.getElementById('filePreviewThumb');
+    const filePreviewName = document.getElementById('filePreviewName');
+
+    let currentFile = null;
 
     const placeholders = [
       "Poser une question à Charles IA...",
@@ -207,14 +226,12 @@ html_code = f"""
 
     const apiKey = "{GEMINI_API_KEY}";
 
-    // Instructions système configurées pour l'API Gemini
     const systemInstruction = {{
       parts: [{{
         text: "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à tous tes utilisateurs sans présumer de leur nom. Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur, réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph 🤖✨\\nC'est un jeune passionné de technologie et de basketball de 19 ans (68 kg) 🏀💻 Il a grandi à Bukavu et habite actuellement à Lukanga pour ses études universitaires à l'UNILUK 🎓📍\\nEn tant que développeur, il maîtrise la programmation (notamment avec Python, PySide6, PyQt6, HTML, CSS et JavaScript) ainsi que le montage vidéo et le graphisme 👨‍💻🎨 Côté cœur, il est épanoui et en couple 💑❤️ Et lorsqu'il n'est pas en train de coder ou de concevoir des projets tech, c'est sur un terrain de basket qu'il trouve son véritable équilibre et sa paix intérieure 🏀🔥'"
       }}]
     }};
 
-    // Structure de l'historique au format Gemini
     let contentsHistory = [];
 
     const loaderHTML = `
@@ -224,6 +241,41 @@ html_code = f"""
         </svg>
       </div>
     `;
+
+    function handleFileSelect(event) {{
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {{
+        const base64Data = e.target.result.split(',')[1];
+        currentFile = {{
+          mimeType: file.type,
+          base64: base64Data,
+          dataUrl: e.target.result,
+          name: file.name,
+          isImage: file.type.startsWith('image/')
+        }};
+
+        filePreviewName.textContent = file.name;
+        if (currentFile.isImage) {{
+          filePreviewThumb.src = e.target.result;
+          filePreviewThumb.style.display = 'block';
+        }} else {{
+          filePreviewThumb.style.display = 'none';
+        }}
+        filePreviewContainer.style.display = 'flex';
+      }};
+      reader.readAsDataURL(file);
+    }}
+
+    function clearSelectedFile() {{
+      currentFile = null;
+      fileInput.value = '';
+      filePreviewContainer.style.display = 'none';
+      filePreviewThumb.src = '';
+      filePreviewName.textContent = '';
+    }}
 
     function selectPrompt(text) {{
       userInput.value = text;
@@ -235,19 +287,34 @@ html_code = f"""
       welcomeScreen.style.display = 'flex';
       bottomBanner.style.display = 'flex';
       contentsHistory = [];
+      clearSelectedFile();
     }}
 
-    function appendMessage(content, sender, isHTML = false) {{
+    function appendMessage(content, sender, isHTML = false, fileObj = null) {{
       const msgDiv = document.createElement('div');
       msgDiv.classList.add('message-bubble', sender === 'user' ? 'message-user' : 'message-assistant');
       
+      let htmlContent = '';
+      if (fileObj && fileObj.isImage) {{
+        htmlContent += `<img src="${{fileObj.dataUrl}}" class="message-media-img" alt="Media envoyé" />`;
+      }} else if (fileObj && !fileObj.isImage) {{
+        htmlContent += `<div style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 6px;">📁 ${{fileObj.name}}</div>`;
+      }}
+
       if (isHTML) {{
-        msgDiv.innerHTML = content;
+        htmlContent += content;
+        msgDiv.innerHTML = htmlContent;
       }} else {{
         if (sender === 'assistant') {{
-          msgDiv.innerHTML = marked.parse(content);
+          htmlContent += marked.parse(content);
+          msgDiv.innerHTML = htmlContent;
         }} else {{
-          msgDiv.textContent = content;
+          if (content) {{
+            const textNode = document.createElement('div');
+            textNode.textContent = content;
+            htmlContent += textNode.innerHTML;
+          }}
+          msgDiv.innerHTML = htmlContent;
         }}
       }}
 
@@ -259,20 +326,36 @@ html_code = f"""
     chatForm.addEventListener('submit', async (e) => {{
       e.preventDefault();
       const text = userInput.value.trim();
-      if (!text) return;
+      if (!text && !currentFile) return;
 
       if (welcomeScreen.style.display !== 'none') {{
         welcomeScreen.style.display = 'none';
         bottomBanner.style.display = 'none';
       }}
 
-      appendMessage(text, 'user');
+      const attachedFile = currentFile;
+      appendMessage(text, 'user', false, attachedFile);
+      
       userInput.value = '';
+      clearSelectedFile();
 
-      // Ajout du message utilisateur au format Gemini (role: "user")
+      // Construction de la partie multimodal pour Gemini
+      const userParts = [];
+      if (text) {{
+        userParts.push({{ text: text }});
+      }}
+      if (attachedFile) {{
+        userParts.push({{
+          inlineData: {{
+            mimeType: attachedFile.mimeType,
+            data: attachedFile.base64
+          }}
+        }});
+      }}
+
       contentsHistory.push({{
         role: "user",
-        parts: [{{ text: text }}]
+        parts: userParts
       }});
 
       const loadingMsg = appendMessage(loaderHTML, 'assistant', true);
@@ -283,7 +366,6 @@ html_code = f"""
       }}
 
       try {{
-        // Endpoint officiel pour Gemini 1.5 Flash (remplacez 'gemini-1.5-flash' par 'gemini-1.5-pro' si besoin)
         const geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
 
         const response = await fetch(geminiUrl, {{
@@ -307,7 +389,6 @@ html_code = f"""
           
           loadingMsg.innerHTML = marked.parse(assistantReply);
           
-          // Ajout de la réponse de l'assistant au format Gemini (role: "model")
           contentsHistory.push({{
             role: "model",
             parts: [{{ text: assistantReply }}]
