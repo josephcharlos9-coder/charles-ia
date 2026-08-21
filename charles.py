@@ -450,7 +450,23 @@ html_code = """
       try {
         const geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + apiKey;
 
-        const response = await fetch(geminiUrl, {
+        // Fonction pour exécuter la requête avec re-tentatives automatiques (Retry sur 503/429)
+        async function fetchWithRetry(url, options, retries = 3, delay = 2000) {
+          for (let i = 0; i < retries; i++) {
+            const res = await fetch(url, options);
+            if (res.status !== 503 && res.status !== 429) {
+              return res;
+            }
+            if (i < retries - 1) {
+              loadingMsg.innerHTML = `Le serveur est très sollicité, nouvelle tentative (${i + 1}/${retries})... ⏳`;
+              await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+            } else {
+              return res;
+            }
+          }
+        }
+
+        const response = await fetchWithRetry(geminiUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -476,6 +492,8 @@ html_code = """
             role: "model",
             parts: [{ text: assistantReply }]
           });
+        } else if (response.status === 503) {
+          loadingMsg.innerHTML = "Les serveurs Gemini sont actuellement très sollicités. Veuillez patienter quelques secondes et réessayer. ⏳";
         } else {
           loadingMsg.innerHTML = "Erreur Gemini (" + response.status + ") : " + (data.error?.message || "Erreur lors de la génération");
         }
@@ -488,11 +506,8 @@ html_code = """
 </html>
 """.replace("__LOGO_B64__", logo_b64).replace("__GEMINI_API_KEY__", GEMINI_API_KEY)
 
-# Échappement préalable des guillemets pour éviter le bug f-string Python
-html_code_escaped = html_code.replace('"', '&quot;')
-
 # Intégration de l'iframe autorisant le microphone
 st.components.v1.html(
-    f'<iframe srcdoc="{html_code_escaped}" allow="microphone *" style="width:100%; height:900px; border:none;"></iframe>',
+    html_code,
     height=900,
 )
