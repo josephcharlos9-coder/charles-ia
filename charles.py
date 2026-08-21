@@ -339,7 +339,7 @@ html_code = f"""
       userInput.value = '';
       clearSelectedFile();
 
-      // Construction de la partie multimodal pour Gemini
+      // Construction de la partie multimodal pour le message actuel
       const userParts = [];
       if (text) {{
         userParts.push({{ text: text }});
@@ -356,6 +356,22 @@ html_code = f"""
       contentsHistory.push({{
         role: "user",
         parts: userParts
+      }});
+
+      // Optimisation de l'historique : conservation des 6 derniers messages maximum
+      // et retrait du contenu Base64 des messages passés pour alléger le transfert HTTP
+      const trimmedHistory = contentsHistory.slice(-6).map((entry, idx, arr) => {{
+        if (entry.role === "user") {{
+          // Pour les messages précédents, remplacer la donnée Base64 par du texte
+          if (idx < arr.length - 1) {{
+            const cleanedParts = entry.parts.map(part => {{
+              if (part.text) return {{ text: part.text }};
+              return {{ text: "[Fichier joint déjà traité]" }};
+            }});
+            return {{ role: "user", parts: cleanedParts }};
+          }}
+        }}
+        return entry;
       }});
 
       const loadingMsg = appendMessage(loaderHTML, 'assistant', true);
@@ -375,9 +391,10 @@ html_code = f"""
           }},
           body: JSON.stringify({{
             systemInstruction: systemInstruction,
-            contents: contentsHistory,
+            contents: trimmedHistory,
             generationConfig: {{
-              temperature: 0.7
+              temperature: 0.7,
+              maxOutputTokens: 1024
             }}
           }})
         }});
