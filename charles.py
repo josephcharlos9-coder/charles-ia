@@ -488,8 +488,11 @@ html_code = """
 </html>
 """.replace("__LOGO_B64__", logo_b64).replace("__GEMINI_API_KEY__", GEMINI_API_KEY)
 
-# Remplacement avec le composant iframe personnalisé pour autoriser le microphone
+# Échappement préalable des guillemets pour éviter le bug f-string Python
+html_code_escaped = html_code.replace('"', '&quot;')
+
+# Intégration de l'iframe autorisant le microphone
 st.components.v1.html(
-    f'<iframe srcdoc="{html_code.replace(\'"\', \'&quot;\')}" allow="microphone *" style="width:100%; height:900px; border:none;"></iframe>',
+    f'<iframe srcdoc="{html_code_escaped}" allow="microphone *" style="width:100%; height:900px; border:none;"></iframe>',
     height=900,
 )
