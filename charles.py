@@ -149,9 +149,9 @@ html_code = """
         <img src="data:image/jpeg;base64,__LOGO_B64__" alt="Logo Charles IA" class="welcome-logo" />
         <h1 class="welcome-title">Comment puis-je vous aider ?</h1>
         <div class="suggestions-grid">
-          <div class="suggestion-chip" onclick="selectPrompt('Créer une image')">
+          <div class="suggestion-chip" onclick="selectPrompt('Analyse cette image')">
             <i data-lucide="image" style="width: 18px; height: 18px; color: #3b82f6;"></i>
-            <span>Créer une image</span>
+            <span>Analyser une image</span>
           </div>
           <div class="suggestion-chip" onclick="selectPrompt('Écrire ou modifier du code')">
             <i data-lucide="pen-tool" style="width: 18px; height: 18px; color: #10b981;"></i>
@@ -221,13 +221,12 @@ html_code = """
 
     const placeholders = [
       "Poser une question à Charles IA...",
+      "Demandez-moi d'analyser une image 🖼️",
       "Demandez-moi d'écrire ou corriger du code 💻",
       "Générez des idées créatives ✨",
       "Posez une question sur n'importe quel sujet 🌐",
       "Besoin d’un coup de main en Python ?",
-      "Libère ta créativité avec Charles IA 🎨",
-      "Explore le monde avec Charles IA 🌍",
-      "Transformons tes idées en algorithmes 🔢"
+      "Libère ta créativité avec Charles IA 🎨"
     ];
 
     let placeholderIndex = 0;
@@ -382,7 +381,21 @@ html_code = """
       userInput.value = '';
       clearSelectedFile();
 
-      contentsHistory.push({ role: "user", content: text || "[Image jointe]" });
+      // Choix dynamique du modèle selon la présence d'une image
+      const modelToUse = attachedFile ? "qwen/qwen3.6-27b" : "openai/gpt-oss-20b";
+
+      // Construction du message pour l'historique et l'API
+      let userPayloadContent;
+      if (attachedFile) {
+        userPayloadContent = [
+          { type: "text", text: text || "Analyse cette image." },
+          { type: "image_url", image_url: { url: attachedFile.dataUrl } }
+        ];
+        contentsHistory.push({ role: "user", content: text ? `${text} [Image jointe]` : "[Image jointe]" });
+      } else {
+        userPayloadContent = text;
+        contentsHistory.push({ role: "user", content: text });
+      }
 
       const loadingMsg = appendMessage(loaderHTML, 'assistant', true);
 
@@ -394,10 +407,18 @@ html_code = """
       try {
         const groqUrl = "https://api.groq.com/openai/v1/chat/completions";
 
-        const messagesToSend = [
-          { role: "system", content: systemPrompt },
-          ...contentsHistory.slice(-10)
-        ];
+        // Pour les requêtes image, on envoie directement le message multimodal courant
+        const currentMessageObject = { role: "user", content: userPayloadContent };
+        
+        let messagesToSend = [];
+        if (attachedFile) {
+          messagesToSend = [{ role: "system", content: systemPrompt }, currentMessageObject];
+        } else {
+          messagesToSend = [
+            { role: "system", content: systemPrompt },
+            ...contentsHistory.slice(-10)
+          ];
+        }
 
         const response = await fetch(groqUrl, {
           method: "POST",
@@ -406,7 +427,7 @@ html_code = """
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: "openai/gpt-oss-20b",
+            model: modelToUse,
             messages: messagesToSend,
             temperature: 0.7,
             max_tokens: 1024
