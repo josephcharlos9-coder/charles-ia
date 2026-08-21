@@ -84,7 +84,7 @@ html_code = f"""
     .input-field {{ border: none; outline: none; background: transparent; font-size: 1rem; color: var(--text-main); width: 100%; resize: none; max-height: 150px; }}
     .form-actions {{ display: flex; align-items: center; justify-content: space-between; }}
     .actions-left, .actions-right {{ display: flex; align-items: center; gap: 8px; }}
-    .icon-action-btn {{ background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; display: flex; align-items: center; justify-content: center; }}
+    .icon-action-btn {{ background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; }}
     .send-btn {{ background-color: var(--text-main); color: #000; width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }}
     .suggestions-grid {{ display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }}
     .suggestion-chip {{ background-color: var(--card-bg); border: 1px solid var(--border-color); padding: 10px 16px; border-radius: 16px; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; }}
@@ -119,6 +119,17 @@ html_code = f"""
       0% {{ transform: rotate(0deg) scale(0.85); opacity: 0.6; }}
       50% {{ transform: rotate(180deg) scale(1.1); opacity: 1; }}
       100% {{ transform: rotate(360deg) scale(0.85); opacity: 0.6; }}
+    }}
+
+    /* Animation pour le bouton du micro actif */
+    .mic-active {{
+      color: #ef4444 !important;
+      animation: pulseMic 1.2s infinite;
+    }}
+    @keyframes pulseMic {{
+      0% {{ transform: scale(1); }}
+      50% {{ transform: scale(1.15); }}
+      100% {{ transform: scale(1); }}
     }}
   </style>
 </head>
@@ -164,7 +175,7 @@ html_code = f"""
           <p style="font-size:0.75rem; color:var(--text-muted);">Conversations dynamiques avec Charles IA</p>
         </div>
       </div>
-      <button class="voice-launch-btn" onclick="alert('Bientôt disponible ! 🎙️')">Lancer Voix</button>
+      <button class="voice-launch-btn" onclick="toggleVoiceInput()">Lancer Voix</button>
     </div>
 
     <div class="input-container-wrapper">
@@ -183,7 +194,9 @@ html_code = f"""
             <button type="button" class="icon-action-btn"><i data-lucide="search" style="width: 18px; height: 18px;"></i></button>
           </div>
           <div class="actions-right">
-            <button type="button" class="icon-action-btn"><i data-lucide="mic" style="width: 18px; height: 18px;"></i></button>
+            <button type="button" class="icon-action-btn" id="micBtn" onclick="toggleVoiceInput()" title="Parler à Charles IA">
+              <i data-lucide="mic" id="micIcon" style="width: 18px; height: 18px;"></i>
+            </button>
             <button type="submit" class="send-btn"><i data-lucide="arrow-up" style="width: 18px; height: 18px;"></i></button>
           </div>
         </div>
@@ -203,6 +216,7 @@ html_code = f"""
     const filePreviewContainer = document.getElementById('filePreviewContainer');
     const filePreviewThumb = document.getElementById('filePreviewThumb');
     const filePreviewName = document.getElementById('filePreviewName');
+    const micBtn = document.getElementById('micBtn');
 
     let currentFile = null;
 
@@ -241,6 +255,62 @@ html_code = f"""
         </svg>
       </div>
     `;
+
+    // --- Gestion de la Reconnaissance Vocale (Web Speech API) ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isListening = false;
+
+    if (SpeechRecognition) {{
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.lang = 'fr-FR';
+      recognition.interimResults = true;
+
+      recognition.onstart = function() {{
+        isListening = true;
+        if (micBtn) micBtn.classList.add('mic-active');
+      }};
+
+      recognition.onresult = function(event) {{
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {{
+          transcript += event.results[i][0].transcript;
+        }}
+        userInput.value = transcript;
+      }};
+
+      recognition.onerror = function(event) {{
+        console.error("Erreur vocale :", event.error);
+        stopVoiceInput();
+      }};
+
+      recognition.onend = function() {{
+        stopVoiceInput();
+        if (userInput.value.trim().length > 0) {{
+          chatForm.dispatchEvent(new Event('submit', {{ cancelable: true, bubbles: true }}));
+        }}
+      }};
+    }}
+
+    function toggleVoiceInput() {{
+      if (!recognition) {{
+        alert("La reconnaissance vocale n'est pas supportée par votre navigateur.");
+        return;
+      }}
+
+      if (isListening) {{
+        recognition.stop();
+      }} else {{
+        userInput.value = '';
+        recognition.start();
+      }}
+    }}
+
+    function stopVoiceInput() {{
+      isListening = false;
+      if (micBtn) micBtn.classList.remove('mic-active');
+    }}
 
     function handleFileSelect(event) {{
       const file = event.target.files[0];
@@ -359,17 +429,15 @@ html_code = f"""
       }});
 
       // Optimisation de l'historique : conservation des 6 derniers messages maximum
-      // et retrait du contenu Base64 des messages passés pour alléger le transfert HTTP
       const trimmedHistory = contentsHistory.slice(-6).map((entry, idx, arr) => {{
         if (entry.role === "user") {{
-          // Pour les messages précédents, remplacer la donnée Base64 par du texte
           if (idx < arr.length - 1) {{
             const cleanedParts = entry.parts.map(part => {{
               if (part.text) return {{ text: part.text }};
               return {{ text: "[Fichier joint déjà traité]" }};
             }});
             return {{ role: "user", parts: cleanedParts }};
-          }}
+          }
         }}
         return entry;
       }});
