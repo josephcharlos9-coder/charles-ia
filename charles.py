@@ -1,5 +1,6 @@
 import base64
 import json
+import requests
 import streamlit as st
 
 
@@ -23,6 +24,42 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
+# Traitement du message envoyé depuis le composant HTML
+if "user_prompt" in st.query_params:
+    user_prompt = st.query_params.get("user_prompt", "")
+    
+    if user_prompt and GROQ_API_KEY:
+        try:
+            response = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {GROQ_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "llama-3.1-8b-instant",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à tous tes utilisateurs sans présumer de leur nom. Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur (ex: 'Qui t'a créé ?', 'Qui est ton créateur ?', etc.), réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph. Il est né et a grandi à Bukavu, habite actuellement à Lukanga pour ses études, a 19 ans, pèse 68 kg et est passionné par le basketball et la technologie ! 🏀💻'"
+                        },
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    "temperature": 0.7
+                },
+                timeout=15
+            )
+            data = response.json()
+            if "choices" in data and len(data["choices"]) > 0:
+                st.write(data["choices"][0]["message"]["content"])
+            else:
+                st.write("Désolé, une erreur est survenue avec l'API. 🤖")
+        except Exception as e:
+            st.write("Erreur de connexion. ⚠️")
+    elif not GROQ_API_KEY:
+        st.write("Erreur : Clé GROQ_API_KEY non configurée dans st.secrets. ⚠️")
+    st.stop()
 
 st.markdown(
     """
@@ -189,7 +226,7 @@ html_code = f"""
       max-width: 720px;
       margin: 0 auto;
       padding: 16px;
-      padding-bottom: 35px; /* Surélève le formulaire pour éviter les superpositions sur mobile */
+      padding-bottom: 35px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -503,9 +540,6 @@ html_code = f"""
     const chatBody = document.getElementById('chatBody');
     const bottomBanner = document.getElementById('bottomBanner');
 
-    const apiKey = "{GROQ_API_KEY}";
-
-    // --- Défilement dynamique du placeholder ---
     const placeholders = [
       "💻 Coder avec Charles IA",
       "🛠️ Corrige ton code facilement",
@@ -531,7 +565,6 @@ html_code = f"""
       placeholderIndex = (placeholderIndex + 1) % placeholders.length;
       userInput.placeholder = placeholders[placeholderIndex];
     }}, 4000);
-    // -----------------------------------------------------------------
 
     userInput.addEventListener('input', function() {{
       this.style.height = 'auto';
@@ -566,31 +599,9 @@ html_code = f"""
       const loadingMsg = appendMessage("Charles IA réfléchit...", 'assistant');
 
       try {{
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {{
-          method: "POST",
-          headers: {{
-            "Authorization": "Bearer " + apiKey,
-            "Content-Type": "application/json"
-          }},
-          body: JSON.stringify({{
-            model: "llama-3.1-8b-instant",
-            messages: [
-              {{
-                role: "system",
-                content: "Tu es Charles IA, un assistant virtuel intelligent, professionnel et charismatique. Tu t'adresses de manière universelle, polie et neutre à tous tes utilisateurs sans présumer de leur nom. Utilise régulièrement des emojis 🤖✨ pour rendre tes réponses vivantes et dynamiques. SEULEMENT si un utilisateur te pose une question directe sur ton créateur (ex: 'Qui t'a créé ?', 'Qui est ton créateur ?', etc.), réponds en présentant ton créateur avec ces détails précis : 'Mon créateur est Charles Joseph. Il est né et a grandi à Bukavu, habite actuellement à Lukanga pour ses études, a 19 ans, pèse 68 kg et est passionné par le basketball et la technologie ! 🏀💻'"
-              }},
-              {{ role: "user", content: text }}
-            ],
-            temperature: 0.7
-          }})
-        }});
-
-        const data = await response.json();
-        if (data.choices && data.choices[0]) {{
-          loadingMsg.textContent = data.choices[0].message.content;
-        }} else {{
-          loadingMsg.textContent = "Désolé, une erreur est survenue. 🤖";
-        }}
+        const response = await fetch(`?user_prompt=${{encodeURIComponent(text)}}`);
+        const resultText = await response.text();
+        loadingMsg.textContent = resultText;
       }} catch (err) {{
         loadingMsg.textContent = "Erreur de connexion. ⚠️";
       }}
