@@ -216,7 +216,7 @@ html_code = f"""
             "Content-Type": "application/json"
           }},
           body: JSON.stringify({{
-            model: "llama3-8b-8192",
+            model: "llama-3.2-11b-vision-preview",
             messages: [
               {{
                 role: "system",
